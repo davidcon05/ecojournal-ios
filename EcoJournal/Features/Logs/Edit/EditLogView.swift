@@ -495,28 +495,23 @@ struct EditLogView: View {
             photoStorage.deletePhoto(at: url)
         }
 
-        // Update log properties (SwiftData auto-saves)
         log.title = editedTitle
         log.notes = editedNotes
         log.mediaURLs = finalPhotoURLs
-        // Note: Audio memos are edited directly through MultiAudioMemoView binding
         log.latitude = editedLatitude
         log.longitude = editedLongitude
         log.altitude = editedAltitude
-
-        // Update parent journal's lastModified to trigger dashboard cascade updates
         journal.touch()
 
+        try? modelContext.save()
         dismiss()
     }
 
     private func deleteLog() {
         guard deleteConfirmationText.trimmingCharacters(in: .whitespaces).uppercased() == "DELETE" else { return }
 
-        // Remove log from journal and model context
         modelContext.delete(log)
-
-        // Dismiss the view
+        try? modelContext.save()
         dismiss()
     }
 

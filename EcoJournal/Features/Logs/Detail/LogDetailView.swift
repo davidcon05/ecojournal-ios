@@ -399,6 +399,7 @@ struct LogDetailView: View {
         guard deleteConfirmationText.trimmingCharacters(in: .whitespaces).uppercased() == "DELETE" else { return }
 
         modelContext.delete(log)
+        try? modelContext.save()
         dismiss()
     }
 
