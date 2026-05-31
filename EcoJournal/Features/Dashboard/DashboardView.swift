@@ -24,6 +24,14 @@ struct DashboardView: View {
                   navigationTitle
                   floatingActionButton
               }
+              .navigationDestination(isPresented: Binding(
+                  get: { viewModel.shouldNavigateToJournal && viewModel.journalToUnlock != nil },
+                  set: { if !$0 { viewModel.resetNavigation() } }
+              )) {
+                  if let journal = viewModel.journalToUnlock {
+                      JournalContainerView(journal: journal)
+                  }
+              }
               .sheet(isPresented: $viewModel.showingCreateJournal) {
                   CreateJournalSheet(onCreate: { name in
                       viewModel.createJournal(name: name, modelContext: modelContext)
@@ -146,7 +154,6 @@ struct DashboardView: View {
               }
           }
           .background(Color.surfaceBackground)
-          .background(hiddenNavigationLink)
       }
 
       private var searchAndFilter: some View {
@@ -181,7 +188,6 @@ struct DashboardView: View {
                       onTap: { viewModel.requestJournalAccess(journal) },
                       onSettingsTap: { viewModel.openSettings(for: journal) }
                   )
-                  .id(journal.lastModified)
                   .accessibilityIdentifier(DashboardAccessibilityIdentifiers.journalCard(journal.id.uuidString))
               }
           }
@@ -189,27 +195,6 @@ struct DashboardView: View {
           .padding(.bottom, 100)
       }
 
-      private var hiddenNavigationLink: some View {
-          NavigationLink(
-              destination: Group {
-                  if let journal = viewModel.journalToUnlock {
-                      JournalContainerView(journal: journal)
-                  }
-              },
-              isActive: Binding(
-                  get: { viewModel.shouldNavigateToJournal && viewModel.journalToUnlock != nil },
-                  set: { viewModel.shouldNavigateToJournal = $0 }
-              )
-          ) {
-              EmptyView()
-          }
-          .hidden()
-          .onChange(of: viewModel.shouldNavigateToJournal) { _, isActive in
-              if !isActive {
-                  viewModel.resetNavigation()
-              }
-          }
-      }
 
       private var navigationTitle: some View {
           Color.clear

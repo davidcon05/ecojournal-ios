@@ -32,16 +32,16 @@ struct LocalImageView<Placeholder: View>: View {
     }
 
     private func loadImage() async {
-        // Load image directly from file system
-        guard url.isFileURL else {
-            // Fallback to AsyncImage behavior for non-local files
-            return
-        }
+        guard url.isFileURL else { return }
 
-        // Read image data directly, bypassing any cache
-        if let data = try? Data(contentsOf: url),
-           let image = UIImage(data: data) {
-            uiImage = image
-        }
+        let url = url
+        let loaded: UIImage? = await Task.detached(priority: .userInitiated) {
+            guard let data = try? Data(contentsOf: url),
+                  let image = UIImage(data: data) else { return nil }
+            // Pre-decode so the first frame isn't decoded on the main thread
+            return await image.byPreparingForDisplay()
+        }.value
+
+        uiImage = loaded
     }
 }

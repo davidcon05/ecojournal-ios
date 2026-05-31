@@ -7,11 +7,13 @@
 
 import SwiftUI
 
-struct FilterSheet: View {
-    @Binding var selectedOption: SortOption
+struct FilterSheet<Option: FilterDisplayable>: View {
+    @Binding var selectedOption: Option
     @Environment(\.dismiss) var dismiss
 
     var body: some View {
+        let allCases = Array(Option.allCases)
+
         VStack(spacing: 0) {
             // Header
             HStack {
@@ -35,26 +37,30 @@ struct FilterSheet: View {
 
             // Options list
             VStack(spacing: 0) {
-                ForEach(SortOption.allCases) { option in
+                ForEach(Array(allCases.enumerated()), id: \.element.id) { index, option in
                     Button(action: {
                         selectedOption = option
                         dismiss()
                     }) {
                         HStack(spacing: 16) {
-                            // Icon
                             Image(systemName: option.systemImage)
                                 .font(.system(size: 18))
                                 .foregroundColor(selectedOption == option ? .primaryColor : .secondaryColor)
                                 .frame(width: 24)
 
-                            // Label
-                            Text(option.rawValue)
-                                .font(.body(16))
-                                .foregroundColor(.onSurface)
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(option.rawValue)
+                                    .font(.body(16))
+                                    .foregroundColor(.onSurface)
+                                if let subtitle = option.subtitle {
+                                    Text(subtitle)
+                                        .font(.label(11))
+                                        .foregroundColor(.onSurfaceVariant)
+                                }
+                            }
 
                             Spacer()
 
-                            // Checkmark
                             if selectedOption == option {
                                 Image(systemName: "checkmark")
                                     .font(.system(size: 16, weight: .semibold))
@@ -69,19 +75,25 @@ struct FilterSheet: View {
                     }
                     .buttonStyle(.plain)
 
-                    if option != SortOption.allCases.last {
+                    if index < allCases.count - 1 {
                         Divider()
                             .padding(.leading, 64)
                     }
                 }
             }
+
+            Spacer()
         }
-        .background(Color.surfaceBackground)
-        .presentationDetents([.height(320)])
+        .presentationBackground(Color.surfaceBackground)
+        .presentationDetents([.height(CGFloat(120 + allCases.count * 56))])
         .presentationDragIndicator(.visible)
     }
 }
 
-#Preview {
-    FilterSheet(selectedOption: .constant(.mostRecent))
+#Preview("Dashboard filter") {
+    FilterSheet(selectedOption: .constant(SortOption.mostRecent))
+}
+
+#Preview("Logs filter") {
+    FilterSheet(selectedOption: .constant(LogSortOption.creationDate))
 }

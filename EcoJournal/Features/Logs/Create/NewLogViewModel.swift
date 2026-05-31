@@ -79,7 +79,7 @@ final class NewLogViewModel: ObservableObject {
     }
 
     func fetchWeatherIfNeeded(for location: CLLocation) {
-        guard currentWeather == nil else { return }
+        guard currentWeather == nil, !isLoadingWeather else { return }
         fetchWeatherWithTimeout(for: location)
     }
 
@@ -253,6 +253,9 @@ final class NewLogViewModel: ObservableObject {
         audioMemos = []
         currentWeather = nil
         weatherError = nil
+        isLoadingWeather = false
+        weatherTask?.cancel()
+        weatherTask = nil
         selectedPhotoIndex = 0
     }
 

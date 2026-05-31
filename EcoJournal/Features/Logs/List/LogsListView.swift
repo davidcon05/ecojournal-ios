@@ -11,7 +11,7 @@ struct LogsListView: View {
     let journal: Journal
     @State private var selectedLog: Log?
     @State private var searchText = ""
-    @State private var sortOption: SortOption = .mostRecent
+    @State private var sortOption: LogSortOption = .creationDate
     @State private var showingFilterSheet = false
 
     private var logThumbnailHeight: CGFloat {
@@ -172,21 +172,19 @@ struct LogsListView: View {
 
         // Apply sort
         switch sortOption {
-        case .mostRecent:
+        case .creationDate:
             result = result.sorted { $0.timestamp > $1.timestamp }
-        case .oldestFirst:
-            result = result.sorted { $0.timestamp < $1.timestamp }
         case .aToZ:
-            result = result.sorted { $0.notes.localizedCompare($1.notes) == .orderedAscending }
+            result = result.sorted { $0.title.localizedCompare($1.title) == .orderedAscending }
         case .zToA:
-            result = result.sorted { $0.notes.localizedCompare($1.notes) == .orderedDescending }
+            result = result.sorted { $0.title.localizedCompare($1.title) == .orderedDescending }
         }
 
         return result
     }
 
     private var isFilterActive: Bool {
-        sortOption != .mostRecent
+        sortOption != .creationDate
     }
 
     private var headerTitle: String {

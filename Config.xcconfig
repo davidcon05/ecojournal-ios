@@ -3,14 +3,14 @@
 //  EcoJournal
 //
 //  Configuration file
-//  This file CAN be committed - it references environment variables, not secrets
+//  This file CAN be committed - it never contains secrets
 //
 
-// OpenWeatherMap API Key
-// Sign up at: https://openweathermap.org/api
-// Free tier: 1000 calls/day
-//
-// Set WEATHER_API_KEY environment variable:
-// - Locally: In Xcode scheme or export in shell
-// - CI: In Xcode Cloud environment variables
-WEATHER_API_KEY = ${WEATHER_API_KEY}
+// Local development overrides (gitignored, never committed)
+// Create Config.local.xcconfig alongside this file and set:
+//   WEATHER_API_KEY = your_key_here
+#include? "Config.local.xcconfig"
+
+// CI (Xcode Cloud): set WEATHER_API_KEY as an environment variable in the
+// workflow. Xcode Cloud exposes env vars as build settings automatically,
+// so $(WEATHER_API_KEY) in Info.plist resolves without any extra config here.

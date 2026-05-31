@@ -1,6 +1,5 @@
 # API Keys - NEVER COMMIT THESE
-# Config.xcconfig now uses environment variables, safe to commit
-# **/Config.xcconfig
+Config.local.xcconfig
 
 # Xcode User Data
 xcuserdata/

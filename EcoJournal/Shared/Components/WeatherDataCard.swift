@@ -27,8 +27,7 @@ struct WeatherDataCard: View {
                 )
 
                 // Weather Icon or Spinner
-                if isLoading || weather == nil {
-                    // Show spinner when loading OR when no data yet
+                if isLoading {
                     ProgressView()
                         .tint(.white)
                         .scaleEffect(1.5)
@@ -36,6 +35,10 @@ struct WeatherDataCard: View {
                     weatherIcon(for: weather.icon)
                         .font(.system(size: 48))
                         .foregroundColor(.white)
+                } else {
+                    Image(systemName: "cloud.slash")
+                        .font(.system(size: 40))
+                        .foregroundColor(.white.opacity(0.6))
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
