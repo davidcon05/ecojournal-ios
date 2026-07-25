@@ -9,10 +9,15 @@ Eco Journal is designed to work **100% offline in remote field locations**. GPS 
 ### What Works Offline
 
 ✅ **GPS Tracking** (satellite-based, no internet needed)
+
 ✅ **Photos & Videos** (device camera, local storage)
+
 ✅ **Audio Recording + Transcription** (on-device speech-to-text)
+
 ✅ **Notes & Data Entry** (all local)
+
 ✅ **Map View** (cached tiles)
+
 ✅ **All Data Storage** (SwiftData/SQLite)
 
 ⚠️ **Optional Internet Features** (graceful degradation):
