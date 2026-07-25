@@ -29,8 +29,26 @@ struct EcoJournalApp: App {
                     // Delete all journals (cascade will delete logs and audio memos)
                     try context.delete(model: Journal.self)
                     try context.save()
+
+                    // Seed fixture data for tests where existing data is a precondition
+                    // rather than the behavior under test (see UITestSeedData.swift)
+                    if let seedJSON = ProcessInfo.processInfo.environment["UITEST_SEED_DATA"],
+                       let seedData = seedJSON.data(using: .utf8) {
+                        let seedJournals = try JSONDecoder().decode([SeedJournal].self, from: seedData)
+                        for seed in seedJournals {
+                            let journal = Journal(name: seed.name)
+                            journal.isPasswordProtected = seed.isPasswordProtected
+                            for logSeed in seed.logs {
+                                let log = Log(title: logSeed.title, notes: logSeed.notes)
+                                log.journal = journal
+                                journal.logs.append(log)
+                            }
+                            context.insert(journal)
+                        }
+                        try context.save()
+                    }
                 } catch {
-                    print("Failed to clear UI test state: \(error)")
+                    print("Failed to prepare UI test state: \(error)")
                 }
             }
 

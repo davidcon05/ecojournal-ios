@@ -10,17 +10,16 @@
   ],
   "defaultOptions" : {
     "codeCoverage" : false,
+    "maximumTestRepetitions" : 1,
     "parallelizationEnabled" : false,
     "testExecutionOrdering" : "alphabetical",
-    "maximumTestRepetitions" : 1,
     "testRepetitionMode" : "none"
   },
   "testTargets" : [
     {
-      "parallelizable" : false,
       "target" : {
         "containerPath" : "container:EcoJournal.xcodeproj",
-        "identifier" : "EcoJournalUITests",
+        "identifier" : "01ACAB372FAA7CA0002C45CC",
         "name" : "EcoJournalUITests"
       }
     }

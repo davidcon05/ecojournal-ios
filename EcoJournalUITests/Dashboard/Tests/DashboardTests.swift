@@ -12,14 +12,19 @@ final class DashboardTests: BaseUITest {
     // MARK: - Empty State Tests
 
     func test_dashboard_showsEmptyState_whenNoJournals() {
+        launch()
+
         DashboardRobot(app: app)
             .verifyEmptyState()
             .verifyDashboardTitle()
     }
 
     // MARK: - Journal Creation Tests
+    // Not seeded: these tests verify the creation flow itself.
 
     func test_createJournal_successfullyCreatesJournal() {
+        launch()
+
         DashboardRobot(app: app)
             .tapNewJournal()
 
@@ -33,6 +38,8 @@ final class DashboardTests: BaseUITest {
     }
 
     func test_createJournal_createButtonDisabled_whenNameIsEmpty() {
+        launch()
+
         DashboardRobot(app: app)
             .tapNewJournal()
 
@@ -41,6 +48,8 @@ final class DashboardTests: BaseUITest {
     }
 
     func test_createMultipleJournals_allAppearOnDashboard() {
+        launch()
+
         // Create first journal
         DashboardRobot(app: app)
             .tapNewJournal()
@@ -75,15 +84,10 @@ final class DashboardTests: BaseUITest {
     // MARK: - Search Tests
 
     func test_searchJournals_findsMatchingJournal() {
-        // Create a journal
-        DashboardRobot(app: app)
-            .tapNewJournal()
+        launch(seeding: [
+            SeedJournal(name: "Olympic National Park", isPasswordProtected: false, logs: [])
+        ])
 
-        CreateJournalRobot(app: app)
-            .enterName("Olympic National Park")
-            .tapCreate()
-
-        // Search for it
         DashboardRobot(app: app)
             .waitForDashboard()
             .searchFor("Olympic")
@@ -91,23 +95,11 @@ final class DashboardTests: BaseUITest {
     }
 
     func test_searchJournals_filtersResults() {
-        // Create first journal
-        DashboardRobot(app: app)
-            .tapNewJournal()
+        launch(seeding: [
+            SeedJournal(name: "Olympic National Park", isPasswordProtected: false, logs: []),
+            SeedJournal(name: "Yellowstone National Park", isPasswordProtected: false, logs: [])
+        ])
 
-        CreateJournalRobot(app: app)
-            .enterName("Olympic National Park")
-            .tapCreate()
-
-        DashboardRobot(app: app)
-            .waitForDashboard()
-            .tapNewJournal()
-
-        CreateJournalRobot(app: app)
-            .enterName("Yellowstone National Park")
-            .tapCreate()
-
-        // Search filters correctly
         DashboardRobot(app: app)
             .waitForDashboard()
             .searchFor("Olympic")
@@ -118,23 +110,11 @@ final class DashboardTests: BaseUITest {
     // MARK: - Dropdown Autocomplete Tests
 
     func test_searchDropdown_showsSuggestions_whenTyping() {
-        // Setup: Create journals
-        DashboardRobot(app: app)
-            .tapNewJournal()
+        launch(seeding: [
+            SeedJournal(name: "Olympic National Park", isPasswordProtected: false, logs: []),
+            SeedJournal(name: "Olympia State Forest", isPasswordProtected: false, logs: [])
+        ])
 
-        CreateJournalRobot(app: app)
-            .enterName("Olympic National Park")
-            .tapCreate()
-
-        DashboardRobot(app: app)
-            .waitForDashboard()
-            .tapNewJournal()
-
-        CreateJournalRobot(app: app)
-            .enterName("Olympia State Forest")
-            .tapCreate()
-
-        // Test: Type to show suggestions
         DashboardRobot(app: app)
             .waitForDashboard()
             .searchFor("Oly")
@@ -144,23 +124,11 @@ final class DashboardTests: BaseUITest {
     }
 
     func test_searchDropdown_filtersSuggestions_basedOnInput() {
-        // Setup: Create journals
-        DashboardRobot(app: app)
-            .tapNewJournal()
+        launch(seeding: [
+            SeedJournal(name: "Olympic National Park", isPasswordProtected: false, logs: []),
+            SeedJournal(name: "Yellowstone National Park", isPasswordProtected: false, logs: [])
+        ])
 
-        CreateJournalRobot(app: app)
-            .enterName("Olympic National Park")
-            .tapCreate()
-
-        DashboardRobot(app: app)
-            .waitForDashboard()
-            .tapNewJournal()
-
-        CreateJournalRobot(app: app)
-            .enterName("Yellowstone National Park")
-            .tapCreate()
-
-        // Test: Filter suggestions
         DashboardRobot(app: app)
             .waitForDashboard()
             .searchFor("Olympic")
@@ -170,15 +138,10 @@ final class DashboardTests: BaseUITest {
     }
 
     func test_searchDropdown_selectingSuggestion_navigatesToJournal() {
-        // Setup: Create journal
-        DashboardRobot(app: app)
-            .tapNewJournal()
+        launch(seeding: [
+            SeedJournal(name: "Olympic National Park", isPasswordProtected: false, logs: [])
+        ])
 
-        CreateJournalRobot(app: app)
-            .enterName("Olympic National Park")
-            .tapCreate()
-
-        // Test: Select suggestion
         DashboardRobot(app: app)
             .waitForDashboard()
             .searchFor("Oly")
@@ -191,15 +154,10 @@ final class DashboardTests: BaseUITest {
     }
 
     func test_searchDropdown_hidesWhenSearchIsCleared() {
-        // Setup: Create journal
-        DashboardRobot(app: app)
-            .tapNewJournal()
+        launch(seeding: [
+            SeedJournal(name: "Olympic National Park", isPasswordProtected: false, logs: [])
+        ])
 
-        CreateJournalRobot(app: app)
-            .enterName("Olympic National Park")
-            .tapCreate()
-
-        // Test: Show then hide dropdown
         DashboardRobot(app: app)
             .waitForDashboard()
             .searchFor("Oly")
@@ -209,33 +167,14 @@ final class DashboardTests: BaseUITest {
     }
 
     func test_searchDropdown_prioritizesPrefixMatches() {
-        // Setup: Create journals with different match types
-        DashboardRobot(app: app)
-            .tapNewJournal()
-
-        CreateJournalRobot(app: app)
-            .enterName("Mount Rainier")
-            .tapCreate()
-
-        DashboardRobot(app: app)
-            .waitForDashboard()
-            .tapNewJournal()
-
-        CreateJournalRobot(app: app)
-            .enterName("Rocky Mountains")
-            .tapCreate()
-
-        DashboardRobot(app: app)
-            .waitForDashboard()
-            .tapNewJournal()
-
-        CreateJournalRobot(app: app)
-            .enterName("Olympic Peninsula")
-            .tapCreate()
-
-        // Test: Search for "Mount" - should show both journals with "mount" in them
         // "Mount Rainier" should appear first (prefix match), then "Rocky Mountains" (contains match)
         // "Olympic Peninsula" should not appear (doesn't contain "mount")
+        launch(seeding: [
+            SeedJournal(name: "Mount Rainier", isPasswordProtected: false, logs: []),
+            SeedJournal(name: "Rocky Mountains", isPasswordProtected: false, logs: []),
+            SeedJournal(name: "Olympic Peninsula", isPasswordProtected: false, logs: [])
+        ])
+
         DashboardRobot(app: app)
             .waitForDashboard()
             .searchFor("Mount")
@@ -248,13 +187,9 @@ final class DashboardTests: BaseUITest {
     // MARK: - Navigation Tests
 
     func test_selectJournal_navigatesToJournalTabs() {
-        // Setup: Create a journal
-        DashboardRobot(app: app)
-            .tapNewJournal()
-
-        CreateJournalRobot(app: app)
-            .enterName("Test Journal")
-            .tapCreate()
+        launch(seeding: [
+            SeedJournal(name: "Test Journal", isPasswordProtected: false, logs: [])
+        ])
 
         DashboardRobot(app: app)
             .waitForDashboard()
@@ -266,13 +201,9 @@ final class DashboardTests: BaseUITest {
     }
 
     func test_navigateToJournal_andBack() {
-        // Setup: Create a journal
-        DashboardRobot(app: app)
-            .tapNewJournal()
-
-        CreateJournalRobot(app: app)
-            .enterName("Test Journal")
-            .tapCreate()
+        launch(seeding: [
+            SeedJournal(name: "Test Journal", isPasswordProtected: false, logs: [])
+        ])
 
         DashboardRobot(app: app)
             .waitForDashboard()

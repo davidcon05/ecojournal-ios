@@ -11,14 +11,9 @@ final class MapTests: BaseUITest {
 
     // MARK: - Test Helpers
 
-    /// Helper to create a journal and navigate to Map tab
+    /// Helper to seed a journal and navigate to Map tab
     private func navigateToMapTab(journalName: String = "Test Journal") {
-        DashboardRobot(app: app)
-            .tapNewJournal()
-
-        CreateJournalRobot(app: app)
-            .enterName(journalName)
-            .tapCreate()
+        launch(seeding: [SeedJournal(name: journalName, isPasswordProtected: false, logs: [])])
 
         DashboardRobot(app: app)
             .waitForDashboard()

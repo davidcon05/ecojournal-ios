@@ -11,14 +11,9 @@ final class NewLogTests: BaseUITest {
 
     // MARK: - Test Helpers
 
-    /// Helper to create a journal and navigate to New Log tab
+    /// Helper to seed a journal and navigate to New Log tab
     private func navigateToNewLogTab(journalName: String = "Test Journal") {
-        DashboardRobot(app: app)
-            .tapNewJournal()
-
-        CreateJournalRobot(app: app)
-            .enterName(journalName)
-            .tapCreate()
+        launch(seeding: [SeedJournal(name: journalName, isPasswordProtected: false, logs: [])])
 
         DashboardRobot(app: app)
             .waitForDashboard()
