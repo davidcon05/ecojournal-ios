@@ -37,8 +37,8 @@ final class DashboardViewModel: ObservableObject {
 
     let keychainManager: KeychainManaging // Exposed for View access
 
-    init(keychainManager: KeychainManaging = KeychainManager()) {
-        self.keychainManager = keychainManager
+    init(keychainManager: KeychainManaging? = nil) {
+        self.keychainManager = keychainManager ?? KeychainManager()
     }
 
     deinit {
@@ -206,7 +206,7 @@ final class DashboardViewModel: ObservableObject {
     }
 
     func saveJournalSettings(modelContext: ModelContext) {
-        guard let journal = selectedJournal else { return }
+        guard selectedJournal != nil else { return }
 
         do {
             try modelContext.save()
@@ -291,7 +291,6 @@ final class DashboardViewModel: ObservableObject {
 
         // Check if journal is locked out
         if lockedJournals.contains(journal.id) {
-            let remainingAttempts = maxPasswordAttempts - (failedAttempts[journal.id] ?? 0)
             lockoutMessage = "Too many failed attempts. Try again in a few minutes."
             return false
         }

@@ -534,7 +534,7 @@ struct EditLogView: View {
 
         // Soft delete - just mark as deleted with animation
         withAnimation {
-            softDeletedPhotoURLs.insert(url)
+            _ = softDeletedPhotoURLs.insert(url)
         }
     }
 
@@ -544,7 +544,7 @@ struct EditLogView: View {
 
         // Remove from soft delete set with animation
         withAnimation {
-            softDeletedPhotoURLs.remove(url)
+            _ = softDeletedPhotoURLs.remove(url)
         }
     }
 }

@@ -46,7 +46,7 @@ final class NewLogViewModel: ObservableObject {
         locationManager: LocationManager,
         weatherService: WeatherService? = nil,
         airQualityService: AirQualityService? = nil,
-        photoStorage: PhotoStorageService = .shared
+        photoStorage: PhotoStorageService? = nil
     ) {
         self.journal = journal
         self.modelContext = modelContext
@@ -56,7 +56,7 @@ final class NewLogViewModel: ObservableObject {
         let apiKey = Bundle.main.infoDictionary?["WEATHER_API_KEY"] as? String ?? ""
         self.weatherService = weatherService ?? WeatherService(apiKey: apiKey)
         self.airQualityService = airQualityService ?? AirQualityService(apiKey: apiKey)
-        self.photoStorage = photoStorage
+        self.photoStorage = photoStorage ?? .shared
     }
 
     deinit {
