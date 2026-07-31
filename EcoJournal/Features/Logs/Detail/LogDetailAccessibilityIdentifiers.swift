@@ -29,6 +29,7 @@ enum LogDetailAccessibilityIdentifiers {
     static let weatherDataCard = "logDetail.weatherDataCard"
     static let temperatureText = "logDetail.temperatureText"
     static let humidityText = "logDetail.humidityText"
+    static let weatherRequestButton = "logDetail.weatherRequestButton"
 
     // Toolbar
     static let editButton = "logDetail.editButton"

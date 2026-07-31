@@ -17,6 +17,9 @@ struct LogDetailView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
 
+    private let weatherService: WeatherService
+    private let airQualityService: AirQualityService
+
     @StateObject private var audioService = AudioRecorderService()
     @State private var playingMemoId: UUID? = nil
 
@@ -25,6 +28,19 @@ struct LogDetailView: View {
     @State private var deleteConfirmationText = ""
     @State private var selectedPhotoIndex: Int = 0
     @State private var isMapExpanded = false
+    @State private var isRefreshingWeather = false
+    @State private var weatherRefreshError: String?
+    @State private var showingWeatherTimeMismatchAlert = false
+
+    init(log: Log, journal: Journal) {
+        self.log = log
+        self.journal = journal
+
+        // Read API key from Info.plist (populated by Config.xcconfig locally or Xcode Cloud environment variable)
+        let apiKey = Bundle.main.infoDictionary?["WEATHER_API_KEY"] as? String ?? ""
+        self.weatherService = WeatherService(apiKey: apiKey)
+        self.airQualityService = AirQualityService(apiKey: apiKey)
+    }
 
     var body: some View {
         ScrollView {
@@ -44,6 +60,12 @@ struct LogDetailView: View {
             confirmationText: $deleteConfirmationText,
             onDelete: deleteLog
         )
+        .alert("Get Current Weather?", isPresented: $showingWeatherTimeMismatchAlert) {
+            Button("Cancel", role: .cancel) {}
+            Button("Get Weather") { fetchWeatherForLog() }
+        } message: {
+            Text(weatherTimeMismatchMessage)
+        }
     }
 
     // MARK: - Main Sections
@@ -79,7 +101,7 @@ struct LogDetailView: View {
                 fieldObservationsSection
             }
 
-            if log.weather != nil {
+            if hasGPSData {
                 telemetryDataSection
             }
 
@@ -217,8 +239,56 @@ struct LogDetailView: View {
                 }
                 .accessibilityElement(children: .contain)
                 .accessibilityIdentifier(LogDetailAccessibilityIdentifiers.weatherDataCard)
+            } else {
+                weatherEmptyState
             }
         }
+    }
+
+    private var weatherEmptyState: some View {
+        VStack(spacing: 12) {
+            if isRefreshingWeather {
+                ProgressView()
+                    .tint(.primaryColor)
+            } else {
+                Image(systemName: "cloud.slash")
+                    .font(.system(size: 32))
+                    .foregroundColor(.onSurfaceVariant)
+
+                Text("No weather data for this entry")
+                    .font(.body(14))
+                    .foregroundColor(.onSurfaceVariant)
+
+                if let weatherRefreshError {
+                    Text(weatherRefreshError)
+                        .font(.body(12))
+                        .foregroundColor(.red)
+                }
+
+                Button(action: { showingWeatherTimeMismatchAlert = true }) {
+                    HStack(spacing: 6) {
+                        Image(systemName: "arrow.clockwise")
+                            .font(.system(size: 13, weight: .semibold))
+                        Text("Get Current Weather")
+                            .font(.body(14, weight: .bold))
+                    }
+                    .foregroundColor(.primaryColor)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 10)
+                    .background(Color.primaryColor.opacity(0.12))
+                    .cornerRadius(20)
+                }
+                .accessibilityIdentifier(LogDetailAccessibilityIdentifiers.weatherRequestButton)
+            }
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 24)
+        .background(Color.surfaceContainerLow)
+        .cornerRadius(12)
+        .overlay(
+            RoundedRectangle(cornerRadius: 12)
+                .stroke(Color.outlineVariant.opacity(0.2), lineWidth: 1)
+        )
     }
 
     // MARK: - Location Sync Section
@@ -372,6 +442,12 @@ struct LogDetailView: View {
         log.latitude != nil && log.longitude != nil
     }
 
+    private var weatherTimeMismatchMessage: String {
+        let createdAt = log.timestamp.formatted(date: .abbreviated, time: .shortened)
+        let now = Date().formatted(date: .abbreviated, time: .shortened)
+        return "This entry was created \(createdAt). Weather isn't available for that moment — getting weather now will use current conditions as of \(now) instead, not conditions from when the entry was made."
+    }
+
     private func aqiLabel(_ aqi: Int) -> String {
         switch aqi {
         case 1: return "1 Good"
@@ -384,6 +460,70 @@ struct LogDetailView: View {
     }
 
     // MARK: - Action Handlers
+
+    private func fetchWeatherForLog() {
+        guard let lat = log.latitude, let lon = log.longitude else { return }
+
+        isRefreshingWeather = true
+        weatherRefreshError = nil
+
+        Task {
+            do {
+                // Fetch weather and air quality concurrently with timeout
+                let (weather, airQuality) = try await withTimeout(seconds: 10) {
+                    async let weatherData = weatherService.fetchWeather(latitude: lat, longitude: lon)
+                    async let airQualityData = airQualityService.fetchAirQuality(latitude: lat, longitude: lon)
+                    return try await (weatherData, airQualityData)
+                }
+
+                let combinedWeather = Weather(
+                    condition: weather.condition,
+                    temperature: weather.temperature,
+                    humidity: weather.humidity,
+                    windSpeed: weather.windSpeed,
+                    icon: weather.icon,
+                    aqi: airQuality.aqi,
+                    pm25: airQuality.pm25,
+                    pm10: airQuality.pm10
+                )
+
+                await MainActor.run {
+                    log.weather = combinedWeather
+                    isRefreshingWeather = false
+                    try? modelContext.save()
+                }
+            } catch is TimeoutError {
+                await MainActor.run {
+                    weatherRefreshError = "Weather refresh timed out"
+                    isRefreshingWeather = false
+                }
+            } catch {
+                await MainActor.run {
+                    weatherRefreshError = error.localizedDescription
+                    isRefreshingWeather = false
+                }
+            }
+        }
+    }
+
+    private func withTimeout<T>(seconds: TimeInterval, operation: @escaping () async throws -> T) async throws -> T {
+        try await withThrowingTaskGroup(of: T.self) { group in
+            group.addTask {
+                try await operation()
+            }
+
+            group.addTask {
+                try await Task.sleep(nanoseconds: UInt64(seconds * 1_000_000_000))
+                throw TimeoutError()
+            }
+
+            let result = try await group.next()!
+            group.cancelAll()
+            return result
+        }
+    }
+
+    struct TimeoutError: Error {}
 
     private func shareLog() {
         // TODO: Implement share functionality
