@@ -300,7 +300,6 @@ struct AudioMemoCard: View {
                     .font(.body(12))
                     .italic()
                     .foregroundColor(.onSurfaceVariant)
-                    .lineLimit(2)
                     .padding(10)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .background(Color.white.opacity(0.5))
