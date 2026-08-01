@@ -22,7 +22,7 @@ class BaseRobot {
     func scrollToAndTap(_ element: XCUIElement) -> Self {
         element.scrollToElement()
         element.tap()
-        return self as! Self
+        return self 
     }
 
     /// Scroll to element, then verify it exists - use this for all existence assertions
@@ -30,7 +30,7 @@ class BaseRobot {
     func scrollToAndVerifyExists(_ element: XCUIElement, message: String = "", file: StaticString = #file, line: UInt = #line) -> Self {
         element.scrollToElement()
         XCTAssertTrue(element.exists, message.isEmpty ? "Element should exist" : message, file: file, line: line)
-        return self as! Self
+        return self 
     }
 
     /// Scroll to element, then enter text
@@ -39,6 +39,6 @@ class BaseRobot {
         element.scrollToElement()
         element.tap()
         element.typeText(text)
-        return self as! Self
+        return self 
     }
 }

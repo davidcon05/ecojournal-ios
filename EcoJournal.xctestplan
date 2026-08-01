@@ -24,14 +24,6 @@
         "identifier" : "01ACAB2D2FAA7CA0002C45CC",
         "name" : "EcoJournalTests"
       }
-    },
-    {
-      "parallelizable" : true,
-      "target" : {
-        "containerPath" : "container:EcoJournal.xcodeproj",
-        "identifier" : "01ACAB372FAA7CA0002C45CC",
-        "name" : "EcoJournalUITests"
-      }
     }
   ],
   "version" : 1
