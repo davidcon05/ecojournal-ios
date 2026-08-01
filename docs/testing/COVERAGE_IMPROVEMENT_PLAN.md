@@ -6,24 +6,28 @@ Measured 2026-08-01. Scope: `EcoJournal.app` target only (test-bundle code exclu
 
 | Suite | Start of work | Now |
 |---|---|---|
-| Unit tests only (`EcoJournalTests`) | 7.13% | **26.91%** (4,183 / 15,547) |
-| UI tests only (`EcoJournalUITests`) | 21.12% | **50.22%** (7,807 / 15,547) |
-| **Combined (unit + UI, single-pass union)** | **24.36%** | **61.61%** (9,578 / 15,547) |
+| Unit tests only (`EcoJournalTests`) | 7.13% | **26.91%** |
+| UI tests only (`EcoJournalUITests`) | 21.12% | **50.22%** |
+| **Combined (unit + UI, single-pass union)** | **24.36%** | **62.64%** (9,757 / 15,577) |
 
-Tests: roughly 140 → **~270**. Unit suite 248 passing, UI suite 53 passing /
-3 skipped / 0 failing.
+Tests: **326 total — 323 passing, 3 skipped, 0 failing.**
 
-Note that 26.91 + 50.22 = 77.13%, but the real union is 61.61%. That ~15-point
-gap is code both suites touch. Adding the two percentages is fiction; the only
-honest figure is the union, measured in one pass over one instrumented build —
-which is what `EcoJournalCombinedCoverage.xctestplan` exists for.
+Take test counts from the result bundle via `xcresulttool`, not by grepping the
+log for "passed": Swift Testing emits one line per argument set for
+parameterized tests, so grep over-counts. That is why an earlier draft of this
+document said 248 and a log grep said 269 — neither was the real figure.
+
+Note that 26.91 + 50.22 = 77.13%, but the real union is 62.64%. That gap is code
+both suites touch. Adding the two percentages is fiction; the only honest figure
+is the union, measured in one pass over one instrumented build — which is what
+`EcoJournalCombinedCoverage.xctestplan` exists for.
 
 Also note `scripts/coverage-report.sh` skips the 32 integration tests, so the
 unit number it prints understates reality by ~5 points (it reports
 `KeychainManager` at 0.5% where the real figure is 79.5%).
 
 **The 85%+ figure on the blog's EcoJournal project page is still wrong — real
-combined coverage is 61.61%.**
+combined coverage is 62.64%.**
 
 ### Why unit and UI coverage don't overlap much
 

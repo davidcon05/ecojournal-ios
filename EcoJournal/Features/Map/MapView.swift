@@ -15,38 +15,19 @@ struct MapView: View {
     @State private var selectedLog: Log?
     @State private var isMetricsExpanded: Bool = false
 
+    /// Pin selection, metrics, and framing live here so they can be tested
+    /// without rendering a map. See MapViewModel.
+    private var viewModel: MapViewModel { MapViewModel(journal: journal) }
+
     // Dynamic height for annotation photo preview
     private var annotationPhotoHeight: CGFloat {
         UIScreen.main.bounds.height * 0.12  // 12% of screen height
     }
 
-    // Filter logs that have GPS coordinates
-    private var logsWithGPS: [Log] {
-        journal.logs.filter { $0.latitude != nil && $0.longitude != nil }
-    }
-
-    // Calculate average metrics from recent logs
-    private var averageElevation: String {
-        let altitudes = logsWithGPS.compactMap { $0.altitude }
-        guard !altitudes.isEmpty else { return "—" }
-        let avg = altitudes.reduce(0, +) / Double(altitudes.count)
-        return String(format: "%.0fm", avg)
-    }
-
-    private var averageHumidity: String {
-        let humidities = logsWithGPS.compactMap { $0.weather?.humidity }
-        guard !humidities.isEmpty else { return "—" }
-        let avg = humidities.reduce(0, +) / humidities.count
-        return "\(avg)%"
-    }
-
-    private var averageTemp: String {
-        let temps = logsWithGPS.compactMap { $0.weather?.temperature }
-        guard !temps.isEmpty else { return "—" }
-        let avg = temps.reduce(0, +) / Double(temps.count)
-        let fahrenheit = (avg * 9/5) + 32
-        return String(format: "%.0f°F", fahrenheit)
-    }
+    private var logsWithGPS: [Log] { viewModel.logsWithGPS }
+    private var averageElevation: String { viewModel.averageElevation }
+    private var averageHumidity: String { viewModel.averageHumidity }
+    private var averageTemp: String { viewModel.averageTemp }
 
     var body: some View {
         ZStack {
@@ -232,27 +213,11 @@ struct MapView: View {
     }
 
     private func pinColor(for log: Log) -> Color {
-        if log.weather != nil {
-            return .blue
-        } else if !log.mediaURLs.isEmpty {
-            return .green
-        } else if !log.audioMemos.isEmpty {
-            return .purple
-        } else {
-            return .primaryColor
-        }
+        viewModel.pinStyle(for: log).color
     }
 
     private func pinIcon(for log: Log) -> String {
-        if log.weather != nil {
-            return "cloud.sun.fill"
-        } else if !log.mediaURLs.isEmpty {
-            return "camera.fill"
-        } else if !log.audioMemos.isEmpty {
-            return "mic.fill"
-        } else {
-            return "mappin.circle.fill"
-        }
+        viewModel.pinStyle(for: log).iconName
     }
 
     // MARK: - Custom Callout Card
@@ -420,33 +385,7 @@ struct MapView: View {
     // MARK: - Map Helpers
 
     private func centerMapOnLogs() {
-        guard !logsWithGPS.isEmpty else { return }
-
-        let coordinates = logsWithGPS.compactMap { log -> CLLocationCoordinate2D? in
-            guard let lat = log.latitude, let lon = log.longitude else { return nil }
-            return CLLocationCoordinate2D(latitude: lat, longitude: lon)
-        }
-
-        guard !coordinates.isEmpty else { return }
-
-        // Calculate bounding box
-        let latitudes = coordinates.map { $0.latitude }
-        let longitudes = coordinates.map { $0.longitude }
-
-        let minLat = latitudes.min() ?? 0
-        let maxLat = latitudes.max() ?? 0
-        let minLon = longitudes.min() ?? 0
-        let maxLon = longitudes.max() ?? 0
-
-        let centerLat = (minLat + maxLat) / 2
-        let centerLon = (minLon + maxLon) / 2
-
-        let spanLat = max((maxLat - minLat) * 1.5, 0.01) // Add 50% padding
-        let spanLon = max((maxLon - minLon) * 1.5, 0.01)
-
-        let center = CLLocationCoordinate2D(latitude: centerLat, longitude: centerLon)
-        let span = MKCoordinateSpan(latitudeDelta: spanLat, longitudeDelta: spanLon)
-        let region = MKCoordinateRegion(center: center, span: span)
+        guard let region = viewModel.regionCoveringAllLogs else { return }
 
         withAnimation {
             position = .region(region)
