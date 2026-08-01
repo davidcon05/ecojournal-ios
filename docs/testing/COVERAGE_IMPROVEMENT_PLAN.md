@@ -8,16 +8,16 @@ Measured 2026-08-01. Scope: `EcoJournal.app` target only (test-bundle code exclu
 |---|---|---|
 | Unit tests only (`EcoJournalTests`) | 7.13% | **26.91%** |
 | UI tests only (`EcoJournalUITests`) | 21.12% | **50.22%** |
-| **Combined (unit + UI, single-pass union)** | **24.36%** | **62.64%** (9,757 / 15,577) |
+| **Combined (unit + UI, single-pass union)** | **24.36%** | **65.17%** (10,149 / 15,574) |
 
-Tests: **326 total — 323 passing, 3 skipped, 0 failing.**
+Tests: **325 total — 323 passing, 2 skipped, 0 failing.**
 
 Take test counts from the result bundle via `xcresulttool`, not by grepping the
 log for "passed": Swift Testing emits one line per argument set for
 parameterized tests, so grep over-counts. That is why an earlier draft of this
 document said 248 and a log grep said 269 — neither was the real figure.
 
-Note that 26.91 + 50.22 = 77.13%, but the real union is 62.64%. That gap is code
+Note that 26.91 + 50.22 = 77.13%, but the real union is 65.17%. That gap is code
 both suites touch. Adding the two percentages is fiction; the only honest figure
 is the union, measured in one pass over one instrumented build — which is what
 `EcoJournalCombinedCoverage.xctestplan` exists for.
@@ -27,7 +27,7 @@ unit number it prints understates reality by ~5 points (it reports
 `KeychainManager` at 0.5% where the real figure is 79.5%).
 
 **The 85%+ figure on the blog's EcoJournal project page is still wrong — real
-combined coverage is 62.64%.**
+combined coverage is 65.17%.**
 
 ### Why unit and UI coverage don't overlap much
 
