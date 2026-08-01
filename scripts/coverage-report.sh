@@ -6,6 +6,8 @@
 #   ./scripts/coverage-report.sh [--open]
 #
 #   --open    Open the HTML report in your default browser when done.
+#   --fast    Skip the integration tests. Faster, but the report will
+#             understate coverage of KeychainManager and PhotoStorageService.
 #
 # What it does:
 #   1. Runs EcoJournalTests (unit tests only, skipping UITests) on the
@@ -39,9 +41,14 @@ TEXT_REPORT="${COVERAGE_DIR}/coverage.txt"
 HTML_REPORT="${COVERAGE_DIR}/index.html"
 
 OPEN_AFTER=false
-if [[ "${1:-}" == "--open" ]]; then
-  OPEN_AFTER=true
-fi
+FAST=false
+for arg in "$@"; do
+  case "$arg" in
+    --open) OPEN_AFTER=true ;;
+    --fast) FAST=true ;;
+    *) ;;
+  esac
+done
 
 # ------------------------------------------------------------------------------
 # Helpers
@@ -62,16 +69,32 @@ mkdir -p "${COVERAGE_DIR}"
 # ------------------------------------------------------------------------------
 # Step 2 — Run unit tests with coverage
 # ------------------------------------------------------------------------------
-info "Running EcoJournalTests on simulator: ${DESTINATION}"
-info "(Skipping slow integration tests and UITests)"
+# The integration tests (KeychainManagerTests, PhotoStorageServiceTests) are
+# what actually cover KeychainManager and PhotoStorageService. Skipping them
+# does not just make the run faster, it makes the report wrong: KeychainManager
+# reads 0.5% without them and 79.5% with them. So they run by default, and
+# --fast opts out with a loud warning.
+SKIP_ARGS=()
+if $FAST; then
+  SKIP_ARGS=(
+    -skip-testing:EcoJournalTests/KeychainManagerTests
+    -skip-testing:EcoJournalTests/PhotoStorageServiceTests
+  )
+  info "Running EcoJournalTests on simulator: ${DESTINATION}"
+  fail "--fast: skipping integration tests. KeychainManager and"
+  fail "PhotoStorageService will be reported as near-0% and the overall"
+  fail "number will understate real coverage by roughly 5 points."
+else
+  info "Running EcoJournalTests on simulator: ${DESTINATION}"
+  info "(Includes integration tests; pass --fast to skip them)"
+fi
 
 xcodebuild test \
   -project "${PROJECT}" \
   -scheme "${SCHEME}" \
   -destination "${DESTINATION}" \
   -only-testing:EcoJournalTests \
-  -skip-testing:EcoJournalTests/KeychainManagerTests \
-  -skip-testing:EcoJournalTests/PhotoStorageServiceTests \
+  "${SKIP_ARGS[@]+"${SKIP_ARGS[@]}"}" \
   -resultBundlePath "${RESULT_BUNDLE}" \
   -enableCodeCoverage YES \
   | xcpretty 2>/dev/null || true
