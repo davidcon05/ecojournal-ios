@@ -108,11 +108,7 @@ struct GPSTelemetryCard: View {
     }
 
     private func formatCoordinates(_ location: CLLocation) -> String {
-        let lat = location.coordinate.latitude
-        let lon = location.coordinate.longitude
-        let latDirection = lat >= 0 ? "N" : "S"
-        let lonDirection = lon >= 0 ? "E" : "W"
-        return String(format: "%.4f° %@, %.4f° %@", abs(lat), latDirection, abs(lon), lonDirection)
+        location.formattedDecimalDegrees
     }
 }
 

@@ -239,7 +239,7 @@ struct HeroPhotoSection: View {
                 if let location = location {
                     MetadataItem(
                         label: "GPS Coordinates",
-                        value: String(format: "%.4f° N, %.4f° W", abs(location.coordinate.latitude), abs(location.coordinate.longitude)),
+                        value: location.coordinate.formattedDecimalDegrees,
                         alignment: .leading
                     )
                 }

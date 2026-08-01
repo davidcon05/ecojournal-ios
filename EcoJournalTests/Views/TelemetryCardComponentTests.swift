@@ -32,8 +32,10 @@ final class GPSTelemetryCardTests: XCTestCase {
             .compactMap { try? $0.string() }
             .joined(separator: " ")
 
-        XCTAssertTrue(text.contains("47.60"), "Latitude should be rendered, got: \(text)")
-        XCTAssertTrue(text.contains("-122.33"), "Longitude should be rendered, got: \(text)")
+        // Signed decimal degrees: the minus sign is what makes the coordinate
+        // directly usable in a mapping tool, so it must survive to the screen.
+        XCTAssertTrue(text.contains("47.6062°"), "Latitude should be rendered, got: \(text)")
+        XCTAssertTrue(text.contains("-122.3321°"), "Western longitude must keep its minus sign, got: \(text)")
     }
 
     func test_gps_withError_showsErrorAndNotCoordinates() throws {
@@ -116,7 +118,10 @@ final class WeatherDataCardTests: XCTestCase {
 
     // MARK: - The three display states
 
-    func test_weather_withData_showsCondition() throws {
+    /// The card never renders `weather.condition` as text — it drives the icon
+    /// and background gradient only. What the user actually reads are the
+    /// metric rows, which fall back to "--" without data.
+    func test_weather_withData_showsMetricValues() throws {
         let card = WeatherDataCard(
             weather: weather(),
             location: seattle,
@@ -128,7 +133,20 @@ final class WeatherDataCardTests: XCTestCase {
             .compactMap { try? $0.string() }
             .joined(separator: " ")
 
-        XCTAssertTrue(text.contains("Clear"), "Condition should be rendered, got: \(text)")
+        XCTAssertTrue(text.contains("50%"), "Humidity should be rendered, got: \(text)")
+        XCTAssertTrue(text.contains("5.0 m/s"), "Wind speed should be rendered, got: \(text)")
+        XCTAssertFalse(text.contains("--"), "Placeholders should not appear when data is present")
+    }
+
+    /// The empty state renders "--" placeholders rather than omitting the rows.
+    func test_weather_withNoData_showsPlaceholders() throws {
+        let card = WeatherDataCard(weather: nil, location: nil, isLoading: false, error: nil)
+
+        let text = try card.inspect().findAll(ViewType.Text.self)
+            .compactMap { try? $0.string() }
+            .joined(separator: " ")
+
+        XCTAssertTrue(text.contains("--"), "Missing data should render as placeholders, got: \(text)")
     }
 
     func test_weather_whileLoading_rendersLoadingState() throws {
