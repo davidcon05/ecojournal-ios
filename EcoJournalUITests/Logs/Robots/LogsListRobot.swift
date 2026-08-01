@@ -38,14 +38,6 @@ final class LogsListRobot: BaseRobot {
     }
 
     @discardableResult
-    func tapFeaturedCardChevron(index: Int) -> Self {
-        let chevron = screen.featuredCardChevron(index: index)
-        XCTAssertTrue(chevron.waitForExistence(timeout: 5), "Chevron button for card \(index) should exist")
-        chevron.tap()
-        return self
-    }
-
-    @discardableResult
     func tapFeaturedCardContent(index: Int) -> Self {
         screen.featuredCardContent(index: index).tap()
         return self
@@ -82,12 +74,6 @@ final class LogsListRobot: BaseRobot {
     }
 
     @discardableResult
-    func verifyFeaturedCardChevronExists(index: Int) -> Self {
-        XCTAssertTrue(screen.featuredCardChevron(index: index).exists, "Featured card \(index) chevron should exist")
-        return self
-    }
-
-    @discardableResult
     func verifyStillOnLogsList() -> Self {
         // We're still on logs list if search field exists
         XCTAssertTrue(screen.searchField.exists, "Should still be on logs list (search field exists)")
@@ -116,38 +102,4 @@ final class LogsListRobot: BaseRobot {
         XCTAssertFalse(weather.exists, "Featured card \(index) weather data should be hidden")
         return self
     }
-
-    // MARK: - High-Level Flows
-
-    @discardableResult
-    func expandCards(indices: [Int]) -> Self {
-        for index in indices {
-            tapFeaturedCardChevron(index: index)
-        }
-        return self
-    }
-
-    @discardableResult
-    func collapseCards(indices: [Int]) -> Self {
-        for index in indices {
-            tapFeaturedCardChevron(index: index)
-        }
-        return self
-    }
-
-    @discardableResult
-    func verifyCardsCollapsed(indices: [Int]) -> Self {
-        for index in indices {
-            verifyExpandedContentHidden(index: index)
-        }
-        return self
-    }
-
-    @discardableResult
-    func verifyCardsExpanded(indices: [Int]) -> Self {
-        for index in indices {
-            verifyExpandedContentVisible(index: index)
-        }
-        return self
-    }
-}
+                }

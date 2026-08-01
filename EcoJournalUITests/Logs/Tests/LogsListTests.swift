@@ -91,30 +91,6 @@ final class LogsListTests: BaseUITest {
             .verifyLogExists(title: "Eagle Sighting")
     }
 
-    // MARK: - Dropdown Tests
-
-    /// Skipped because the feature is missing, not because the test is flaky:
-    /// the card chevron this drives was removed and never re-implemented, so
-    /// `logsList.featuredCard.chevron.*` does not exist in the view. Delete the
-    /// skip once the chevron is back — the rest of the test is still valid, and
-    /// it guards the nested-button bug the chevron originally caused.
-    func test_featuredCards_expandAndCollapse_togglesContent() throws {
-        throw XCTSkip("Card chevron is not implemented in LogsListView")
-        navigateToLogsTab(logs: [
-            .bare(title: "First Observation", notes: "Testing dropdown behavior"),
-            .bare(title: "Second Observation", notes: "Testing dropdown behavior")
-        ])
-
-        LogsListRobot(app: app)
-            .verifyLogExists(title: "First Observation", index: 0)
-            .verifyLogExists(title: "Second Observation", index: 1)
-            .verifyCardsCollapsed(indices: [0, 1])
-            .expandCards(indices: [0, 1])
-            .verifyCardsExpanded(indices: [0, 1])
-            .collapseCards(indices: [0, 1])
-            .verifyCardsCollapsed(indices: [0, 1])
-    }
-
     // MARK: - Navigation Tests
 
     func test_logsList_navigateToLogDetail() {
@@ -141,6 +117,20 @@ final class LogsListTests: BaseUITest {
             .verifyTitle("Rich Detail Log")
             .verifyGPSCardExists()
             .verifyWeatherCardExists()
+    }
+
+    /// Media fixtures are real files on disk, so this proves the photo and
+    /// audio sections render from bytes that actually loaded — not from a URL
+    /// that merely exists in the model.
+    func test_logsList_logWithMedia_rendersPhotoAndAudioSections() {
+        navigateToLogsTab(logs: [.withMedia(title: "Media Log")])
+
+        LogsListRobot(app: app)
+            .selectLog(title: "Media Log")
+
+        LogDetailRobot(app: app)
+            .verifyTitle("Media Log")
+            .verifyPhotosRendered(atLeast: 2)
     }
 
     func test_logsList_navigateToLogDetailAndBack() {

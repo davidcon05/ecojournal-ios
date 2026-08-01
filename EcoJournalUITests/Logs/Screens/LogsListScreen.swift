@@ -61,9 +61,6 @@ struct LogsListScreen {
     }
 
     // Featured Card Elements
-    func featuredCardChevron(index: Int) -> XCUIElement {
-        app.buttons["logsList.featuredCard.\(index).chevron"].firstMatch
-    }
 
     func featuredCardContent(index: Int) -> XCUIElement {
         app.otherElements["logsList.featuredCard.\(index).content"].firstMatch
