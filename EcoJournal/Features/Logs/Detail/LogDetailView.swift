@@ -230,37 +230,26 @@ struct LogDetailContentView: View {
         VStack(alignment: .leading, spacing: 12) {
             sectionHeader(icon: "chart.line.uptrend.xyaxis", title: "Telemetry Data")
 
-            if let weather = log.weather {
-                LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
-                    TelemetryCard(
-                        icon: "thermometer.medium",
-                        label: "Temperature",
-                        value: String(format: "%.1f°F", weather.temperature)
-                    )
-
-                    TelemetryCard(
-                        icon: "humidity",
-                        label: "Humidity",
-                        value: "\(weather.humidity)%"
-                    )
-
-                    TelemetryCard(
-                        icon: "wind",
-                        label: "Wind Speed",
-                        value: String(format: "%.1f mph", weather.windSpeed * 0.621371)
-                    )
-
-                    if let aqi = weather.aqi {
-                        TelemetryCard(
-                            icon: "aqi.medium",
-                            label: "Air Quality",
-                            value: viewModel.aqiLabel(aqi)
-                        )
-                    }
-                }
+            if log.weather != nil {
+                // Shared with NewLogView and EditLogView. This screen used to
+                // draw its own grid, which meant two components formatting the
+                // same readings — and disagreeing: wind was shown in mph here
+                // and m/s everywhere else, for the same log.
+                WeatherDataCard(
+                    weather: log.weather,
+                    location: viewModel.hasGPSData
+                        ? CLLocation(latitude: log.latitude!, longitude: log.longitude!)
+                        : nil,
+                    isLoading: viewModel.isRefreshingWeather,
+                    error: viewModel.weatherRefreshError,
+                    onRefresh: { showingWeatherTimeMismatchAlert = true }
+                )
                 .accessibilityElement(children: .contain)
                 .accessibilityIdentifier(LogDetailAccessibilityIdentifiers.weatherDataCard)
             } else {
+                // Kept local: retrieving weather for an entry saved without it
+                // is specific to this screen, and the prompt has to be
+                // discoverable rather than a small refresh icon.
                 weatherEmptyState
             }
         }
@@ -461,37 +450,6 @@ struct LogDetailContentView: View {
 
 // MARK: - Supporting Views
 // MetadataItem moved to HeroPhotoSection.swift for reusability
-
-struct TelemetryCard: View {
-    let icon: String
-    let label: String
-    let value: String
-
-    var body: some View {
-        VStack(spacing: 8) {
-            Image(systemName: icon)
-                .font(.system(size: 24))
-                .foregroundColor(.tertiary)
-
-            Text(label.uppercased())
-                .font(.label(10, weight: .bold))
-                .foregroundColor(.onSurfaceVariant)
-                .tracking(1.2)
-
-            Text(value)
-                .font(.display(18, weight: .black))
-                .foregroundColor(.onSurface)
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 16)
-        .background(Color.surfaceContainerLow)
-        .cornerRadius(12)
-        .overlay(
-            RoundedRectangle(cornerRadius: 12)
-                .stroke(Color.outlineVariant.opacity(0.2), lineWidth: 1)
-        )
-    }
-}
 
 // MARK: - Audio Memo Display Card (Read-Only)
 

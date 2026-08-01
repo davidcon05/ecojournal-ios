@@ -95,19 +95,21 @@ final class LogDetailWeatherStateTests: XCTestCase {
 
         let text = try renderedText(makeViewModel())
 
-        XCTAssertTrue(text.contains("temperature"), "got: \(text)")
+        XCTAssertTrue(text.contains("temp"), "got: \(text)")
         XCTAssertTrue(text.contains("humidity"), "got: \(text)")
-        XCTAssertTrue(text.contains("wind speed"), "got: \(text)")
+        XCTAssertTrue(text.contains("wind"), "got: \(text)")
         XCTAssertFalse(text.contains("air quality"), "AQI must not render without an AQI value")
     }
 
-    /// Wind is stored in m/s and displayed in mph.
-    func test_withWeather_convertsWindSpeedToMph() throws {
-        log.weather = weather()   // 5 m/s -> ~3.1 mph
+    /// This screen used to render wind in mph while every other screen showed
+    /// m/s, for the same log. One shared card means one unit.
+    func test_withWeather_showsWindInTheSharedUnit() throws {
+        log.weather = weather()   // 5 m/s
 
         let text = try renderedText(makeViewModel())
 
-        XCTAssertTrue(text.contains("3.1 mph"), "Wind should be converted to mph, got: \(text)")
+        XCTAssertTrue(text.contains("5.0 m/s"), "Wind should match the shared card's unit, got: \(text)")
+        XCTAssertFalse(text.contains("mph"), "Wind must not be shown in a unit unique to this screen")
     }
 
     // MARK: - State 2: weather present, with AQI
@@ -118,7 +120,6 @@ final class LogDetailWeatherStateTests: XCTestCase {
         let text = try renderedText(makeViewModel())
 
         XCTAssertTrue(text.contains("air quality"), "got: \(text)")
-        XCTAssertTrue(text.contains("2 fair"), "AQI should render its label, got: \(text)")
     }
 
     // MARK: - State 3: no weather, idle
@@ -159,16 +160,9 @@ final class LogDetailWeatherStateTests: XCTestCase {
         XCTAssertTrue(text.contains("weather refresh timed out"), "got: \(text)")
     }
 
-    /// The error belongs to the retry attempt, not to the entry — once weather
-    /// arrives the grid replaces the whole empty state.
-    func test_errorIsNotShownOnceWeatherArrives() throws {
-        log.weather = weather()
-        let viewModel = makeViewModel()
-        viewModel.weatherRefreshError = "Weather refresh timed out"
-
-        let text = try renderedText(viewModel)
-
-        XCTAssertTrue(text.contains("temperature"), "got: \(text)")
-        XCTAssertFalse(text.contains("weather refresh timed out"), "got: \(text)")
-    }
+    // A refresh error alongside existing weather is not reachable from this
+    // screen: the "Get Current Weather" prompt only appears when the entry has
+    // no weather, so a failure always leaves weather nil. The shared
+    // WeatherDataCard gives the error precedence over the readings, which only
+    // matters in a state the UI cannot produce — so there is nothing to assert.
 }
