@@ -6,6 +6,10 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		01C9E5A2301E1BB200DEBEDD /* ViewInspector in Frameworks */ = {isa = PBXBuildFile; productRef = 01VI0002000000000000VI02 /* ViewInspector */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		01ACAB2F2FAA7CA0002C45CC /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -28,6 +32,7 @@
 		01ACAB1F2FAA7C9D002C45CC /* EcoJournal.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = EcoJournal.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		01ACAB2E2FAA7CA0002C45CC /* EcoJournalTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = EcoJournalTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		01ACAB382FAA7CA0002C45CC /* EcoJournalUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = EcoJournalUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		01C75227301420A1003EB8D0 /* EcoJournal.xctestplan */ = {isa = PBXFileReference; lastKnownFileType = text; path = EcoJournal.xctestplan; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -73,6 +78,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				01C9E5A2301E1BB200DEBEDD /* ViewInspector in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -89,6 +95,7 @@
 		01ACAB162FAA7C9D002C45CC = {
 			isa = PBXGroup;
 			children = (
+				01C75227301420A1003EB8D0 /* EcoJournal.xctestplan */,
 				019318F12FBF300000FF619B /* Config.xcconfig */,
 				01ACAB212FAA7C9D002C45CC /* EcoJournal */,
 				01ACAB312FAA7CA0002C45CC /* EcoJournalTests */,
@@ -150,6 +157,7 @@
 			);
 			name = EcoJournalTests;
 			packageProductDependencies = (
+				01VI0002000000000000VI02 /* ViewInspector */,
 			);
 			productName = EcoJournalTests;
 			productReference = 01ACAB2E2FAA7CA0002C45CC /* EcoJournalTests.xctest */;
@@ -186,7 +194,7 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
 				LastSwiftUpdateCheck = 2640;
-				LastUpgradeCheck = 2640;
+				LastUpgradeCheck = 2660;
 				TargetAttributes = {
 					01ACAB1E2FAA7C9D002C45CC = {
 						CreatedOnToolsVersion = 26.4;
@@ -210,6 +218,9 @@
 			);
 			mainGroup = 01ACAB162FAA7C9D002C45CC;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				01VI0001000000000000VI01 /* XCRemoteSwiftPackageReference "ViewInspector" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 01ACAB202FAA7C9D002C45CC /* Products */;
 			projectDirPath = "";
@@ -343,6 +354,7 @@
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 			};
@@ -400,6 +412,7 @@
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_COMPILATION_MODE = wholemodule;
 				VALIDATE_PRODUCT = YES;
 			};
@@ -619,6 +632,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		01VI0001000000000000VI01 /* XCRemoteSwiftPackageReference "ViewInspector" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/nalexn/ViewInspector.git";
+			requirement = {
+				branch = 0.10.4;
+				kind = branch;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		01VI0002000000000000VI02 /* ViewInspector */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 01VI0001000000000000VI01 /* XCRemoteSwiftPackageReference "ViewInspector" */;
+			productName = ViewInspector;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 01ACAB172FAA7C9D002C45CC /* Project object */;
 }
