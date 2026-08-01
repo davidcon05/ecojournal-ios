@@ -12,8 +12,22 @@ struct LogDetailScreen {
 
     // MARK: - Elements
 
+    /// `HeroPhotoSection` is a container, so SwiftUI spreads this identifier
+    /// across the elements it wraps — StaticText, ScrollView — and never onto
+    /// an Image. Querying `app.images[...]` matches nothing.
     var heroPhoto: XCUIElement {
-        app.images["logDetail.heroPhoto"].firstMatch
+        app.descendants(matching: .any)
+            .matching(identifier: "logDetail.heroPhoto")
+            .firstMatch
+    }
+
+    /// The rendered photo thumbnails. These only exist if the image bytes
+    /// actually loaded, which is what makes them worth asserting on.
+    var heroPhotoThumbnails: XCUIElementQuery {
+        app.descendants(matching: .any)
+            .matching(identifier: "logDetail.heroPhoto")
+            .element(boundBy: 2)
+            .images
     }
 
     var titleText: XCUIElement {

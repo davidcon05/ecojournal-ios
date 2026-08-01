@@ -36,6 +36,11 @@ struct SeedLog: Codable {
     var weather: SeedWeather?
     var mediaURLs: [String]?
     var audioMemos: [SeedAudioMemo]?
+
+    /// Number of real JPEG fixtures to generate and attach. Prefer this over
+    /// `mediaURLs`: a fabricated URL points at nothing, so the gallery renders
+    /// an empty frame and anything gated on the image loading stays untested.
+    var photoCount: Int?
 }
 
 struct SeedWeather: Codable {
@@ -102,16 +107,18 @@ extension SeedLog {
         )
     }
 
-    /// Photos + audio memos: unlocks HeroPhotoSection and the audio sections.
-    static func withMedia(title: String) -> SeedLog {
+    /// Photos + audio memos, both backed by real generated files so the
+    /// gallery can draw them and the player can open them.
+    static func withMedia(title: String, photoCount: Int = 2) -> SeedLog {
         SeedLog(
             title: title,
             notes: "Observation with media",
             latitude: 47.6062,
             longitude: -122.3321,
             audioMemos: [
-                SeedAudioMemo(title: "Dawn chorus", transcription: "Birds calling at sunrise", duration: 12)
-            ]
+                SeedAudioMemo(title: "Dawn chorus", transcription: "Birds calling at sunrise", duration: 1)
+            ],
+            photoCount: photoCount
         )
     }
 }

@@ -34,6 +34,10 @@ struct EcoJournalApp: App {
                     // rather than the behavior under test (see UITestSeedData.swift)
                     if let seedJSON = ProcessInfo.processInfo.environment["UITEST_SEED_DATA"],
                        let seedData = seedJSON.data(using: .utf8) {
+                        // Real files on disk, so seeded photos and memos can
+                        // actually be loaded and played rather than pointing
+                        // at paths that do not exist.
+                        UITestFixtureMedia.reset()
                         let seedJournals = try JSONDecoder().decode([SeedJournal].self, from: seedData)
                         for seed in seedJournals {
                             let journal = Journal(name: seed.name)
@@ -45,10 +49,17 @@ struct EcoJournalApp: App {
                                 try? KeychainManager().savePassword(password, for: journal.id.uuidString)
                             }
                             for logSeed in seed.logs {
+                                var mediaURLs = (logSeed.mediaURLs ?? []).compactMap(URL.init(string:))
+                                for _ in 0..<(logSeed.photoCount ?? 0) {
+                                    if let photoURL = UITestFixtureMedia.makePhoto() {
+                                        mediaURLs.append(photoURL)
+                                    }
+                                }
+
                                 let log = Log(
                                     title: logSeed.title,
                                     notes: logSeed.notes,
-                                    mediaURLs: (logSeed.mediaURLs ?? []).compactMap(URL.init(string:))
+                                    mediaURLs: mediaURLs
                                 )
                                 log.latitude = logSeed.latitude
                                 log.longitude = logSeed.longitude
@@ -68,9 +79,14 @@ struct EcoJournalApp: App {
                                 }
 
                                 for memoSeed in logSeed.audioMemos ?? [] {
+                                    // A real file, so playback has something to open.
+                                    guard let audioURL = UITestFixtureMedia.makeAudio(
+                                        duration: memoSeed.duration
+                                    ) else { continue }
+
                                     let memo = AudioMemo(
                                         title: memoSeed.title,
-                                        audioURL: URL(fileURLWithPath: "/uitest/\(UUID().uuidString).m4a"),
+                                        audioURL: audioURL,
                                         transcription: memoSeed.transcription,
                                         duration: memoSeed.duration
                                     )

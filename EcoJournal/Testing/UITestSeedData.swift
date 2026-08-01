@@ -36,6 +36,11 @@ struct SeedLog: Codable {
     var weather: SeedWeather?
     var mediaURLs: [String]?
     var audioMemos: [SeedAudioMemo]?
+
+    /// Number of real JPEG fixtures to generate and attach. Prefer this over
+    /// `mediaURLs`: a fabricated URL points at nothing, so the gallery renders
+    /// an empty frame and anything gated on the image loading stays untested.
+    var photoCount: Int?
 }
 
 struct SeedWeather: Codable {

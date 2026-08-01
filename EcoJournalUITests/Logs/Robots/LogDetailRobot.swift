@@ -67,9 +67,23 @@ final class LogDetailRobot: BaseRobot {
         return self
     }
 
+    /// Asserts photos actually rendered, not merely that the section is
+    /// present — a log whose media URLs point at nothing still draws the
+    /// section, just empty.
+    @discardableResult
+    func verifyPhotosRendered(atLeast count: Int = 1) -> Self {
+        XCTAssertTrue(screen.heroPhoto.waitForExistence(timeout: 5), "Hero section should exist")
+        let rendered = screen.heroPhotoThumbnails.count
+        XCTAssertGreaterThanOrEqual(
+            rendered, count,
+            "Expected at least \(count) rendered photo(s), found \(rendered)"
+        )
+        return self
+    }
+
     @discardableResult
     func verifyHeroPhotoExists() -> Self {
-        XCTAssertTrue(screen.heroPhoto.exists, "Hero photo should exist")
+        XCTAssertTrue(screen.heroPhoto.waitForExistence(timeout: 5), "Hero photo should exist")
         return self
     }
 }
