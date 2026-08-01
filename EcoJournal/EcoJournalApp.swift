@@ -38,8 +38,45 @@ struct EcoJournalApp: App {
                         for seed in seedJournals {
                             let journal = Journal(name: seed.name)
                             journal.isPasswordProtected = seed.isPasswordProtected
+
+                            // A protected journal is only unlockable if its
+                            // password is in the Keychain, keyed by journal ID.
+                            if let password = seed.password {
+                                try? KeychainManager().savePassword(password, for: journal.id.uuidString)
+                            }
                             for logSeed in seed.logs {
-                                let log = Log(title: logSeed.title, notes: logSeed.notes)
+                                let log = Log(
+                                    title: logSeed.title,
+                                    notes: logSeed.notes,
+                                    mediaURLs: (logSeed.mediaURLs ?? []).compactMap(URL.init(string:))
+                                )
+                                log.latitude = logSeed.latitude
+                                log.longitude = logSeed.longitude
+                                log.altitude = logSeed.altitude
+
+                                if let weatherSeed = logSeed.weather {
+                                    log.weather = Weather(
+                                        condition: weatherSeed.condition,
+                                        temperature: weatherSeed.temperature,
+                                        humidity: weatherSeed.humidity,
+                                        windSpeed: weatherSeed.windSpeed,
+                                        icon: weatherSeed.icon,
+                                        aqi: weatherSeed.aqi,
+                                        pm25: weatherSeed.pm25,
+                                        pm10: weatherSeed.pm10
+                                    )
+                                }
+
+                                for memoSeed in logSeed.audioMemos ?? [] {
+                                    let memo = AudioMemo(
+                                        title: memoSeed.title,
+                                        audioURL: URL(fileURLWithPath: "/uitest/\(UUID().uuidString).m4a"),
+                                        transcription: memoSeed.transcription,
+                                        duration: memoSeed.duration
+                                    )
+                                    memo.log = log
+                                }
+
                                 log.journal = journal
                                 journal.logs.append(log)
                             }
