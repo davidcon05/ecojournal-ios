@@ -9,10 +9,18 @@ import Foundation
 import UIKit
 
 /// Service for saving and managing photos for log entries
-class PhotoStorageService {
+///
+/// `nonisolated` because this is stateless file I/O with nothing to protect.
+/// The project defaults to `MainActor` isolation, which would otherwise give
+/// this type an isolated `deinit` that traps when an instance is released off
+/// the main queue.
+nonisolated class PhotoStorageService {
     static let shared = PhotoStorageService()
 
-    private init() {}
+    /// Not `private` so tests can substitute a subclassed fake, the same way
+    /// `WeatherService` and `AirQualityService` are faked. App code should
+    /// still go through `.shared`.
+    init() {}
 
     /// Directory for storing log photos
     private var photosDirectory: URL {

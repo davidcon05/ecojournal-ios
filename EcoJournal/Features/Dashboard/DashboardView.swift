@@ -421,6 +421,7 @@ struct DashboardView: View {
           .onHover { hovering in
               isHovered = hovering
           }
+          .contentShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
           .onTapGesture {
               onTap()
           }

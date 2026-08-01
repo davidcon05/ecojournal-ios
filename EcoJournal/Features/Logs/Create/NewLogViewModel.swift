@@ -36,6 +36,7 @@ final class NewLogViewModel: ObservableObject {
     private let airQualityService: AirQualityService
     private let photoStorage: PhotoStorageService
     internal let modelContext: ModelContext  // internal for testing
+    private let weatherFetchTimeoutSeconds: TimeInterval
 
     private var weatherTask: Task<Void, Never>?
 
@@ -46,11 +47,13 @@ final class NewLogViewModel: ObservableObject {
         locationManager: LocationManager,
         weatherService: WeatherService? = nil,
         airQualityService: AirQualityService? = nil,
-        photoStorage: PhotoStorageService? = nil
+        photoStorage: PhotoStorageService? = nil,
+        weatherFetchTimeoutSeconds: TimeInterval = 10
     ) {
         self.journal = journal
         self.modelContext = modelContext
         self.locationManager = locationManager
+        self.weatherFetchTimeoutSeconds = weatherFetchTimeoutSeconds
 
         // Read API key from Info.plist (populated by Config.xcconfig locally or Xcode Cloud environment variable)
         let apiKey = Bundle.main.infoDictionary?["WEATHER_API_KEY"] as? String ?? ""
@@ -93,7 +96,7 @@ final class NewLogViewModel: ObservableObject {
         weatherTask = Task {
             do {
                 // Fetch weather and air quality concurrently with 10 second timeout
-                let (weather, airQuality) = try await withTimeout(seconds: 10) {
+                let (weather, airQuality) = try await withTimeout(seconds: weatherFetchTimeoutSeconds) {
                     async let weatherData = self.weatherService.fetchWeather(
                         latitude: location.coordinate.latitude,
                         longitude: location.coordinate.longitude

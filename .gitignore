@@ -49,6 +49,7 @@ fastlane/test_output
 # Code coverage
 *.gcda
 *.gcno
+coverage/
 
 # Temporary files
 *.swp

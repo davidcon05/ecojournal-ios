@@ -26,8 +26,16 @@ struct LogsListScreen {
     }
 
     // Search & Filter
+    /// `SearchBarWithDropdown` puts the identifier on a container marked
+    /// `.accessibilityElement(children: .contain)`, so the identified element
+    /// is an `Other` wrapping the field — querying `app.textFields[id]`
+    /// directly matches nothing. Reach the field inside the container.
     var searchField: XCUIElement {
-        app.textFields["logsList.searchField"].firstMatch
+        app.descendants(matching: .any)
+            .matching(identifier: "logsList.searchField")
+            .firstMatch
+            .textFields
+            .firstMatch
     }
 
     var filterButton: XCUIElement {

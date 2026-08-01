@@ -36,6 +36,9 @@
          <TestPlanReference
             reference = "container:EcoJournalUITests.xctestplan">
          </TestPlanReference>
+         <TestPlanReference
+            reference = "container:EcoJournalCombinedCoverage.xctestplan">
+         </TestPlanReference>
       </TestPlans>
       <Testables>
          <TestableReference

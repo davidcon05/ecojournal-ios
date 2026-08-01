@@ -10,37 +10,55 @@ import CoreLocation
 import SwiftData
 import MapKit
 
+/// Builds the view model once the environment's `modelContext` is available,
+/// then hands off to `LogDetailContentView`. Same pattern as `NewLogView`.
 struct LogDetailView: View {
     let log: Log
     let journal: Journal
 
     @Environment(\.modelContext) private var modelContext
-    @Environment(\.dismiss) private var dismiss
-
-    private let weatherService: WeatherService
-    private let airQualityService: AirQualityService
 
     @StateObject private var audioService = AudioRecorderService()
-    @State private var playingMemoId: UUID? = nil
+    @State private var viewModel: LogDetailViewModel?
+
+    var body: some View {
+        Group {
+            if let viewModel {
+                LogDetailContentView(
+                    viewModel: viewModel,
+                    journal: journal,
+                    audioService: audioService
+                )
+            } else {
+                ProgressView()
+            }
+        }
+        .onAppear {
+            if viewModel == nil {
+                viewModel = LogDetailViewModel(
+                    log: log,
+                    modelContext: modelContext,
+                    audioService: audioService
+                )
+            }
+        }
+    }
+}
+
+struct LogDetailContentView: View {
+    @ObservedObject var viewModel: LogDetailViewModel
+    let journal: Journal
+    let audioService: AudioRecorderService
+
+    @Environment(\.dismiss) private var dismiss
+
+    private var log: Log { viewModel.log }
 
     @State private var showingEditView = false
     @State private var showingDeleteConfirmation = false
-    @State private var deleteConfirmationText = ""
     @State private var selectedPhotoIndex: Int = 0
     @State private var isMapExpanded = false
-    @State private var isRefreshingWeather = false
-    @State private var weatherRefreshError: String?
     @State private var showingWeatherTimeMismatchAlert = false
-
-    init(log: Log, journal: Journal) {
-        self.log = log
-        self.journal = journal
-
-        // Read API key from Info.plist (populated by Config.xcconfig locally or Xcode Cloud environment variable)
-        let apiKey = Bundle.main.infoDictionary?["WEATHER_API_KEY"] as? String ?? ""
-        self.weatherService = WeatherService(apiKey: apiKey)
-        self.airQualityService = AirQualityService(apiKey: apiKey)
-    }
 
     var body: some View {
         ScrollView {
@@ -57,14 +75,17 @@ struct LogDetailView: View {
         }
         .deleteConfirmationAlert(
             isPresented: $showingDeleteConfirmation,
-            confirmationText: $deleteConfirmationText,
-            onDelete: deleteLog
+            confirmationText: $viewModel.deleteConfirmationText,
+            onDelete: { viewModel.deleteLog() }
         )
         .alert("Get Current Weather?", isPresented: $showingWeatherTimeMismatchAlert) {
             Button("Cancel", role: .cancel) {}
-            Button("Get Weather") { fetchWeatherForLog() }
+            Button("Get Weather") { viewModel.fetchWeatherForLog() }
         } message: {
-            Text(weatherTimeMismatchMessage)
+            Text(viewModel.weatherTimeMismatchMessage)
+        }
+        .onChange(of: viewModel.shouldDismiss) { _, shouldDismiss in
+            if shouldDismiss { dismiss() }
         }
     }
 
@@ -74,7 +95,7 @@ struct LogDetailView: View {
         HeroPhotoSection(
             photoURLs: log.mediaURLs,
             selectedPhotoIndex: selectedPhotoIndex,
-            location: hasGPSData ? CLLocation(latitude: log.latitude!, longitude: log.longitude!) : nil,
+            location: viewModel.hasGPSData ? CLLocation(latitude: log.latitude!, longitude: log.longitude!) : nil,
             altitude: log.altitude,
             mode: .readOnly,
             showGradientOverlay: true,
@@ -101,11 +122,11 @@ struct LogDetailView: View {
                 fieldObservationsSection
             }
 
-            if hasGPSData {
+            if viewModel.hasGPSData {
                 telemetryDataSection
             }
 
-            if hasGPSData {
+            if viewModel.hasGPSData {
                 locationSyncSection
             }
 
@@ -193,9 +214,9 @@ struct LogDetailView: View {
                         memo: memo,
                         index: index + 1,
                         audioService: audioService,
-                        isPlaying: playingMemoId == memo.id,
+                        isPlaying: viewModel.playingMemoId == memo.id,
                         onPlay: {
-                            playAudio(memo: memo)
+                            viewModel.toggleAudio(for: memo)
                         }
                     )
                 }
@@ -233,7 +254,7 @@ struct LogDetailView: View {
                         TelemetryCard(
                             icon: "aqi.medium",
                             label: "Air Quality",
-                            value: aqiLabel(aqi)
+                            value: viewModel.aqiLabel(aqi)
                         )
                     }
                 }
@@ -247,7 +268,7 @@ struct LogDetailView: View {
 
     private var weatherEmptyState: some View {
         VStack(spacing: 12) {
-            if isRefreshingWeather {
+            if viewModel.isRefreshingWeather {
                 ProgressView()
                     .tint(.primaryColor)
             } else {
@@ -259,7 +280,7 @@ struct LogDetailView: View {
                     .font(.body(14))
                     .foregroundColor(.onSurfaceVariant)
 
-                if let weatherRefreshError {
+                if let weatherRefreshError = viewModel.weatherRefreshError {
                     Text(weatherRefreshError)
                         .font(.body(12))
                         .foregroundColor(.red)
@@ -436,129 +457,6 @@ struct LogDetailView: View {
         )
     }
 
-    // MARK: - Computed Properties
-
-    private var hasGPSData: Bool {
-        log.latitude != nil && log.longitude != nil
-    }
-
-    private var weatherTimeMismatchMessage: String {
-        let createdAt = log.timestamp.formatted(date: .abbreviated, time: .shortened)
-        let now = Date().formatted(date: .abbreviated, time: .shortened)
-        return "This entry was created \(createdAt). Weather isn't available for that moment — getting weather now will use current conditions as of \(now) instead, not conditions from when the entry was made."
-    }
-
-    private func aqiLabel(_ aqi: Int) -> String {
-        switch aqi {
-        case 1: return "1 Good"
-        case 2: return "2 Fair"
-        case 3: return "3 Moderate"
-        case 4: return "4 Poor"
-        case 5: return "5 Very Poor"
-        default: return "\(aqi)"
-        }
-    }
-
-    // MARK: - Action Handlers
-
-    private func fetchWeatherForLog() {
-        guard let lat = log.latitude, let lon = log.longitude else { return }
-
-        isRefreshingWeather = true
-        weatherRefreshError = nil
-
-        Task {
-            do {
-                // Fetch weather and air quality concurrently with timeout
-                let (weather, airQuality) = try await withTimeout(seconds: 10) {
-                    async let weatherData = weatherService.fetchWeather(latitude: lat, longitude: lon)
-                    async let airQualityData = airQualityService.fetchAirQuality(latitude: lat, longitude: lon)
-                    return try await (weatherData, airQualityData)
-                }
-
-                let combinedWeather = Weather(
-                    condition: weather.condition,
-                    temperature: weather.temperature,
-                    humidity: weather.humidity,
-                    windSpeed: weather.windSpeed,
-                    icon: weather.icon,
-                    aqi: airQuality.aqi,
-                    pm25: airQuality.pm25,
-                    pm10: airQuality.pm10
-                )
-
-                await MainActor.run {
-                    log.weather = combinedWeather
-                    isRefreshingWeather = false
-                    try? modelContext.save()
-                }
-            } catch is TimeoutError {
-                await MainActor.run {
-                    weatherRefreshError = "Weather refresh timed out"
-                    isRefreshingWeather = false
-                }
-            } catch {
-                await MainActor.run {
-                    weatherRefreshError = error.localizedDescription
-                    isRefreshingWeather = false
-                }
-            }
-        }
-    }
-
-    private func withTimeout<T>(seconds: TimeInterval, operation: @escaping () async throws -> T) async throws -> T {
-        try await withThrowingTaskGroup(of: T.self) { group in
-            group.addTask {
-                try await operation()
-            }
-
-            group.addTask {
-                try await Task.sleep(nanoseconds: UInt64(seconds * 1_000_000_000))
-                throw TimeoutError()
-            }
-
-            let result = try await group.next()!
-            group.cancelAll()
-            return result
-        }
-    }
-
-    struct TimeoutError: Error {}
-
-    private func shareLog() {
-        // TODO: Implement share functionality
-        print("Share log")
-    }
-
-    private func exportLog() {
-        // TODO: Implement export functionality
-        print("Export log")
-    }
-
-    private func deleteLog() {
-        guard deleteConfirmationText.trimmingCharacters(in: .whitespaces).uppercased() == "DELETE" else { return }
-
-        modelContext.delete(log)
-        try? modelContext.save()
-        dismiss()
-    }
-
-    // MARK: - Audio Playback
-
-    private func playAudio(memo: AudioMemo) {
-        if playingMemoId == memo.id {
-            // Already playing this memo - stop it
-            audioService.stopPlayback()
-            playingMemoId = nil
-        } else {
-            // Stop any currently playing audio
-            audioService.stopPlayback()
-
-            // Play the selected memo
-            audioService.playAudio(from: memo.audioURL)
-            playingMemoId = memo.id
-        }
-    }
 }
 
 // MARK: - Supporting Views

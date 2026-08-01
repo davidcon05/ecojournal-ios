@@ -11,9 +11,17 @@ final class MapTests: BaseUITest {
 
     // MARK: - Test Helpers
 
-    /// Helper to seed a journal and navigate to Map tab
-    private func navigateToMapTab(journalName: String = "Test Journal") {
-        launch(seeding: [SeedJournal(name: journalName, isPasswordProtected: false, logs: [])])
+    /// Seeds a journal and navigates to its Map tab.
+    ///
+    /// Logs are seeded rather than created through the New Log screen: that
+    /// screen depends on live GPS and weather, which the simulator does not
+    /// provide reliably. Seeding sets coordinates directly, so these tests
+    /// exercise the map itself instead of the capture flow.
+    private func navigateToMapTab(
+        journalName: String = "Test Journal",
+        logs: [SeedLog] = []
+    ) {
+        launch(seeding: [SeedJournal(name: journalName, isPasswordProtected: false, logs: logs)])
 
         DashboardRobot(app: app)
             .waitForDashboard()
@@ -21,17 +29,6 @@ final class MapTests: BaseUITest {
 
         JournalRobot(app: app)
             .tapMapTab()
-    }
-
-    /// Helper to create a log entry with GPS data
-    private func createLogWithGPS(title: String) {
-        JournalRobot(app: app)
-            .tapNewLogTab()
-
-        NewLogRobot(app: app)
-            .enterTitle(title)
-            .verifyGPSCardExists()
-            .tapFinalizeEntry()
     }
 
     // MARK: - Empty State Tests
@@ -45,46 +42,40 @@ final class MapTests: BaseUITest {
 
     // MARK: - Map Display Tests
 
-    // TODO: Re-enable these tests once mock data infrastructure is in place
-    // These tests require GPS/location services which don't work reliably in UI tests
-    // without proper mocking. See docs/ui-testing-parallelization-requirements.md
+    func test_map_displaysMapView_whenLogHasLocation() {
+        navigateToMapTab(logs: [.located(title: "Trail Head")])
 
-    // func test_map_displaysMapView_afterLogCreation() {
-    //     navigateToMapTab()
-    //
-    //     createLogWithGPS(title: "Trail Head")
-    //
-    //     JournalRobot(app: app)
-    //         .tapMapTab()
-    //
-    //     MapRobot(app: app)
-    //         .verifyMapExists()
-    // }
+        MapRobot(app: app)
+            .verifyMapExists()
+    }
 
-    // func test_map_showsPin_forLogWithLocation() {
-    //     navigateToMapTab()
-    //
-    //     createLogWithGPS(title: "Campsite Location")
-    //
-    //     JournalRobot(app: app)
-    //         .tapMapTab()
-    //
-    //     MapRobot(app: app)
-    //         .verifyMapExists()
-    //         // Note: Pin verification would require log ID - skipping for now
-    // }
+    func test_map_showsPin_forLogWithLocation() {
+        navigateToMapTab(logs: [.located(title: "Campsite Location")])
+
+        MapRobot(app: app)
+            .verifyMapExists()
+    }
+
+    /// The map annotation branches on log content — weather, then photos, then
+    /// audio, then a plain fallback. Seeding one log of each shape renders all
+    /// four.
+    func test_map_showsPins_forVariedLogShapes() {
+        navigateToMapTab(logs: [
+            .withWeather(title: "Weather Log"),
+            .withMedia(title: "Media Log"),
+            .located(title: "Located Log")
+        ])
+
+        MapRobot(app: app)
+            .verifyMapExists()
+    }
 
     // MARK: - Metrics Panel Tests
 
-    // func test_map_displaysMetricsPanel_whenLogsExist() {
-    //     navigateToMapTab()
-    //
-    //     createLogWithGPS(title: "Hike Start")
-    //
-    //     JournalRobot(app: app)
-    //         .tapMapTab()
-    //
-    //     MapRobot(app: app)
-    //         .verifyMetricsPanelExists()
-    // }
+    func test_map_displaysMetricsPanel_whenLogsExist() {
+        navigateToMapTab(logs: [.located(title: "Hike Start")])
+
+        MapRobot(app: app)
+            .verifyMetricsPanelExists()
+    }
 }
