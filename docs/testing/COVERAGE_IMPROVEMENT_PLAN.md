@@ -8,9 +8,9 @@ Measured 2026-08-01. Scope: `EcoJournal.app` target only (test-bundle code exclu
 |---|---|---|
 | Unit tests only (`EcoJournalTests`) | 7.13% | **26.91%** |
 | UI tests only (`EcoJournalUITests`) | 21.12% | **50.22%** |
-| **Combined (unit + UI, single-pass union)** | **24.36%** | **65.17%** (10,149 / 15,574) |
+| **Combined (unit + UI, single-pass union)** | **24.36%** | **65.17%** (10,150 / 15,575) |
 
-Tests: **325 total — 323 passing, 2 skipped, 0 failing.**
+Tests: **328 total — 326 passing, 2 skipped, 0 failing.**
 
 Take test counts from the result bundle via `xcresulttool`, not by grepping the
 log for "passed": Swift Testing emits one line per argument set for
