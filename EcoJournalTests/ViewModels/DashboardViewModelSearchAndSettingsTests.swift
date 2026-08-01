@@ -260,7 +260,7 @@ struct DashboardViewModelSearchAndSettingsTests {
 
         #expect(sut.verifyPasswordForSettings("wrong") == false)
         #expect(sut.failedAttempts[journal.id] == 1)
-        #expect(sut.lockoutMessage == "4 attempts remaining")
+        #expect(sut.lockoutMessage == "Incorrect password — 4 attempts remaining")
         #expect(sut.showingSettings == false)
     }
 
@@ -271,7 +271,7 @@ struct DashboardViewModelSearchAndSettingsTests {
         sut.setFailedAttempts(3, for: journal.id)
 
         #expect(sut.verifyPasswordForSettings("wrong") == false)
-        #expect(sut.lockoutMessage == "1 attempt remaining")
+        #expect(sut.lockoutMessage == "Incorrect password — 1 attempt remaining")
     }
 
     @Test("Exhausting the attempt budget locks the journal")

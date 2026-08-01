@@ -198,7 +198,9 @@ final class DashboardViewModel: ObservableObject {
                 lockoutMessage = "Too many failed attempts. Journal locked for 5 minutes."
             } else {
                 let remainingAttempts = maxPasswordAttempts - attempts
-                lockoutMessage = "\(remainingAttempts) attempt\(remainingAttempts == 1 ? "" : "s") remaining"
+                // Say why, not just how many left — on its own, "4 attempts
+                // remaining" never tells the user the password was wrong.
+                lockoutMessage = "Incorrect password — \(remainingAttempts) attempt\(remainingAttempts == 1 ? "" : "s") remaining"
             }
 
             return false
@@ -315,7 +317,9 @@ final class DashboardViewModel: ObservableObject {
                 lockoutMessage = "Too many failed attempts. Journal locked for 5 minutes."
             } else {
                 let remainingAttempts = maxPasswordAttempts - attempts
-                lockoutMessage = "\(remainingAttempts) attempt\(remainingAttempts == 1 ? "" : "s") remaining"
+                // Say why, not just how many left — on its own, "4 attempts
+                // remaining" never tells the user the password was wrong.
+                lockoutMessage = "Incorrect password — \(remainingAttempts) attempt\(remainingAttempts == 1 ? "" : "s") remaining"
             }
 
             return false

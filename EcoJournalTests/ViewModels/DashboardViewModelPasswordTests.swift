@@ -38,7 +38,7 @@ struct DashboardViewModelPasswordTests {
         // Then: Failure tracked
         #expect(result == false)
         #expect(viewModel.failedAttempts[journal.id] == 1)
-        #expect(viewModel.lockoutMessage == "4 attempts remaining")
+        #expect(viewModel.lockoutMessage == "Incorrect password — 4 attempts remaining")
 
         // When: 5 total failed attempts
         for _ in 1...4 {
