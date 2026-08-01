@@ -16,9 +16,10 @@ final class NewLogViewModelTests: XCTestCase {
     var sut: NewLogViewModel!
     var testJournal: Journal!
     var testModelContext: ModelContext!
-    var mockLocationManager: LocationManager!
+    var mockLocationManager: FakeLocationManager!
     var mockWeatherService: MockWeatherService!
     var mockAirQualityService: MockAirQualityService!
+    var fakePhotoStorage: FakePhotoStorageService!
 
     override func setUpWithError() throws {
         try super.setUpWithError()
@@ -34,9 +35,10 @@ final class NewLogViewModelTests: XCTestCase {
         try testModelContext.save()
 
         // Create mock services
-        mockLocationManager = LocationManager()
+        mockLocationManager = FakeLocationManager()
         mockWeatherService = MockWeatherService()
         mockAirQualityService = MockAirQualityService()
+        fakePhotoStorage = FakePhotoStorageService()
 
         // Initialize system under test
         sut = NewLogViewModel(
@@ -44,7 +46,8 @@ final class NewLogViewModelTests: XCTestCase {
             modelContext: testModelContext,
             locationManager: mockLocationManager,
             weatherService: mockWeatherService,
-            airQualityService: mockAirQualityService
+            airQualityService: mockAirQualityService,
+            photoStorage: fakePhotoStorage
         )
     }
 
@@ -55,6 +58,7 @@ final class NewLogViewModelTests: XCTestCase {
         mockLocationManager = nil
         mockWeatherService = nil
         mockAirQualityService = nil
+        fakePhotoStorage = nil
         try super.tearDownWithError()
     }
 
@@ -150,8 +154,9 @@ final class NewLogViewModelTests: XCTestCase {
         XCTAssertEqual(sut.weatherError, "Title is required")
     }
 
-    // Test removed: saveLog() is async and causes race conditions in unit tests
-    // Full save logic is tested via UI tests
+    // Weather-fetch, retry, and saveLog() success-path tests (GPS present/absent,
+    // audio memos, journal touch) live in NewLogViewModelSwiftTestingTests.swift,
+    // written with Swift Testing rather than XCTest.
 
     // MARK: - Reset Tests
 
@@ -185,44 +190,6 @@ final class NewLogViewModelTests: XCTestCase {
         return renderer.image { context in
             color.setFill()
             context.fill(CGRect(origin: .zero, size: size))
-        }
-    }
-}
-
-// MARK: - Mock Services
-
-class MockWeatherService: WeatherService {
-    var shouldSucceed = true
-    var fetchWeatherCalled = false
-
-    override func fetchWeather(latitude: Double, longitude: Double) async throws -> Weather {
-        fetchWeatherCalled = true
-
-        if shouldSucceed {
-            return Weather(
-                condition: "Clear",
-                temperature: 72.0,
-                humidity: 50,
-                windSpeed: 5.0,
-                icon: "01d"
-            )
-        } else {
-            throw NSError(domain: "MockWeatherService", code: -1, userInfo: [NSLocalizedDescriptionKey: "Mock error"])
-        }
-    }
-}
-
-class MockAirQualityService: AirQualityService {
-    var shouldSucceed = true
-    var fetchAirQualityCalled = false
-
-    override func fetchAirQuality(latitude: Double, longitude: Double) async throws -> AirQualityData {
-        fetchAirQualityCalled = true
-
-        if shouldSucceed {
-            return AirQualityData(aqi: 2, pm25: 12.5, pm10: 20.0)
-        } else {
-            throw NSError(domain: "MockAirQualityService", code: -1, userInfo: [NSLocalizedDescriptionKey: "Mock error"])
         }
     }
 }
