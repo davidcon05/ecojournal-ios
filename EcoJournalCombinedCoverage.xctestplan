@@ -1,0 +1,46 @@
+{
+  "configurations" : [
+    {
+      "id" : "7C1E0B92-3A55-4E0D-9F41-2B6C8D5A1E77",
+      "name" : "Combined Coverage",
+      "options" : {
+        "maximumTestExecutionTimeAllowance" : 600
+      }
+    }
+  ],
+  "defaultOptions" : {
+    "codeCoverage" : {
+      "targets" : [
+        {
+          "containerPath" : "container:EcoJournal.xcodeproj",
+          "identifier" : "01ACAB1E2FAA7C9D002C45CC",
+          "name" : "EcoJournal"
+        }
+      ]
+    },
+    "targetForVariableExpansion" : {
+      "containerPath" : "container:EcoJournal.xcodeproj",
+      "identifier" : "01ACAB1E2FAA7C9D002C45CC",
+      "name" : "EcoJournal"
+    },
+    "testExecutionOrdering" : "alphabetical"
+  },
+  "testTargets" : [
+    {
+      "parallelizable" : true,
+      "target" : {
+        "containerPath" : "container:EcoJournal.xcodeproj",
+        "identifier" : "01ACAB2D2FAA7CA0002C45CC",
+        "name" : "EcoJournalTests"
+      }
+    },
+    {
+      "target" : {
+        "containerPath" : "container:EcoJournal.xcodeproj",
+        "identifier" : "01ACAB372FAA7CA0002C45CC",
+        "name" : "EcoJournalUITests"
+      }
+    }
+  ],
+  "version" : 1
+}
