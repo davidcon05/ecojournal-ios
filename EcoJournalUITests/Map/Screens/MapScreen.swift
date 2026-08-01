@@ -10,6 +10,19 @@ import XCTest
 struct MapScreen {
     let app: XCUIApplication
 
+    /// Looks an element up by identifier regardless of its element type.
+    ///
+    /// SwiftUI decides for itself what type an `.accessibilityIdentifier`
+    /// lands on, and it is often not the one you'd expect: `Map` exposes the
+    /// identifier on a wrapping `Other` (the real `Map` element is an
+    /// unidentified child), and the metrics panel surfaces as `StaticText`.
+    /// Querying a specific type here silently finds nothing.
+    private func anyElement(_ identifier: String) -> XCUIElement {
+        app.descendants(matching: .any)
+            .matching(identifier: identifier)
+            .firstMatch
+    }
+
     // MARK: - Elements
 
     // Empty State
@@ -27,7 +40,7 @@ struct MapScreen {
 
     // Map
     var mapView: XCUIElement {
-        app.maps["map.mapView"].firstMatch
+        anyElement("map.mapView")
     }
 
     // Controls
@@ -36,12 +49,12 @@ struct MapScreen {
     }
 
     var metricsPanel: XCUIElement {
-        app.otherElements["map.metricsPanel"].firstMatch
+        anyElement("map.metricsPanel")
     }
 
     // Callout
     var calloutCard: XCUIElement {
-        app.otherElements["map.calloutCard"].firstMatch
+        anyElement("map.calloutCard")
     }
 
     var calloutDetailsButton: XCUIElement {
@@ -54,6 +67,6 @@ struct MapScreen {
 
     // Dynamic Elements
     func pin(logID: String) -> XCUIElement {
-        app.otherElements["map.pin.\(logID)"].firstMatch
+        anyElement("map.pin.\(logID)")
     }
 }

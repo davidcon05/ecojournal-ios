@@ -22,7 +22,7 @@ struct DashboardScreen {
     }
 
     var filterButton: XCUIElement {
-        app.buttons.matching(identifier: "filterButton").firstMatch
+        app.buttons.matching(identifier: "dashboard.filterButton").firstMatch
     }
 
     // Empty State
