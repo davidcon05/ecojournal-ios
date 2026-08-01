@@ -109,7 +109,7 @@ struct WeatherDataCard: View {
                         // Wind Speed
                         DataPoint(
                             label: "WIND",
-                            value: weather.map { String(format: "%.1f m/s", $0.windSpeed) } ?? "--"
+                            value: weather.map { String(format: "%.1f mph", $0.windSpeedMPH) } ?? "--"
                         )
                     }
 

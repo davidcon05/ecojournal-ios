@@ -134,7 +134,9 @@ final class WeatherDataCardTests: XCTestCase {
             .joined(separator: " ")
 
         XCTAssertTrue(text.contains("50%"), "Humidity should be rendered, got: \(text)")
-        XCTAssertTrue(text.contains("5.0 m/s"), "Wind speed should be rendered, got: \(text)")
+        // 5 m/s is 11.2 mph. Asserting the converted value guards the factor:
+        // the km/h factor would render 3.1 here.
+        XCTAssertTrue(text.contains("11.2 mph"), "Wind speed should be rendered in mph, got: \(text)")
         XCTAssertFalse(text.contains("--"), "Placeholders should not appear when data is present")
     }
 

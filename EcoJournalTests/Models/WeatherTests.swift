@@ -61,4 +61,34 @@ nonisolated struct WeatherTests {
         #expect(zeroAQI.aqiDescription == "Unknown")
         #expect(nilAQI.aqiDescription == nil)
     }
+
+    // MARK: - Wind Speed Conversion
+
+    /// The API is called with `units=metric`, so `windSpeed` arrives in metres
+    /// per second. An earlier version of the detail screen converted it with
+    /// the km/h factor (0.621371), under-reporting wind by 3.6x — 5 m/s showed
+    /// as 3.1 mph when it is really 11.2 mph.
+    @Test("Wind speed converts from metres per second to mph")
+    func windSpeed_convertsFromMetresPerSecondToMPH() {
+        let weather = Weather(condition: "Clear", temperature: 20, humidity: 50, windSpeed: 5, icon: "01d")
+
+        #expect(abs(weather.windSpeedMPH - 11.1847) < 0.001)
+    }
+
+    @Test("A dead calm converts to zero")
+    func windSpeed_zeroStaysZero() {
+        let weather = Weather(condition: "Clear", temperature: 20, humidity: 50, windSpeed: 0, icon: "01d")
+
+        #expect(weather.windSpeedMPH == 0)
+    }
+
+    /// Guards specifically against the km/h factor being used again: at
+    /// 10 m/s the wrong conversion gives 6.2 and the right one gives 22.4.
+    @Test("The conversion is not the km/h factor")
+    func windSpeed_doesNotUseKilometresPerHourFactor() {
+        let weather = Weather(condition: "Clear", temperature: 20, humidity: 50, windSpeed: 10, icon: "01d")
+
+        #expect(weather.windSpeedMPH > 20)
+        #expect(abs(weather.windSpeedMPH - 6.21371) > 1)
+    }
 }

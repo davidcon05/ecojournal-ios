@@ -233,8 +233,7 @@ struct LogDetailContentView: View {
             if log.weather != nil {
                 // Shared with NewLogView and EditLogView. This screen used to
                 // draw its own grid, which meant two components formatting the
-                // same readings — and disagreeing: wind was shown in mph here
-                // and m/s everywhere else, for the same log.
+                // same readings — and disagreeing about the units.
                 WeatherDataCard(
                     weather: log.weather,
                     location: viewModel.hasGPSData

@@ -101,15 +101,16 @@ final class LogDetailWeatherStateTests: XCTestCase {
         XCTAssertFalse(text.contains("air quality"), "AQI must not render without an AQI value")
     }
 
-    /// This screen used to render wind in mph while every other screen showed
-    /// m/s, for the same log. One shared card means one unit.
-    func test_withWeather_showsWindInTheSharedUnit() throws {
+    /// Wind is stored in m/s and shown in mph everywhere. This also guards the
+    /// conversion factor: the old detail screen used the km/h factor on m/s
+    /// data and under-reported wind by 3.6x.
+    func test_withWeather_showsWindInMPH() throws {
         log.weather = weather()   // 5 m/s
 
         let text = try renderedText(makeViewModel())
 
-        XCTAssertTrue(text.contains("5.0 m/s"), "Wind should match the shared card's unit, got: \(text)")
-        XCTAssertFalse(text.contains("mph"), "Wind must not be shown in a unit unique to this screen")
+        XCTAssertTrue(text.contains("11.2 mph"), "5 m/s should render as 11.2 mph, got: \(text)")
+        XCTAssertFalse(text.contains("3.1"), "3.1 would mean the km/h factor was used on m/s data")
     }
 
     // MARK: - State 2: weather present, with AQI

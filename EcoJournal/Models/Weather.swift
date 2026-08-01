@@ -41,6 +41,16 @@ nonisolated struct Weather: Codable, Hashable {
     }
 
     /// Air quality description
+    /// Wind speed in miles per hour.
+    ///
+    /// `windSpeed` is stored exactly as the API returns it, and WeatherService
+    /// requests `units=metric`, which means **metres per second** — not km/h.
+    /// Getting that wrong under-reports wind by a factor of 3.6, so the
+    /// conversion lives here rather than being retyped at each call site.
+    var windSpeedMPH: Double {
+        windSpeed * 2.23694
+    }
+
     var aqiDescription: String? {
         guard let aqi = aqi else { return nil }
         switch aqi {
