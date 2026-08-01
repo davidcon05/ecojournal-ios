@@ -1,33 +1,29 @@
 # Coverage Improvement Plan
 
-Measured 2026-07-31. Scope: `EcoJournal.app` target only (test-bundle code excluded).
+Measured 2026-08-01. Scope: `EcoJournal.app` target only (test-bundle code excluded).
 
 ## Current State
 
-| Suite | App Coverage | Lines |
+| Suite | Start of work | Now |
 |---|---|---|
-| Unit tests only (`EcoJournalTests`) — baseline | 7.13% | 1,104 / 15,475 |
-| **Unit tests only — after Phase 1 + 2** | **9.58%** | **1,487 / 15,520** |
-| UI tests only (`EcoJournalUITests`) | 21.12% | 3,269 / 15,475 |
-| Combined (unit + UI) — original baseline | 24.36% | 3,769 / 15,475 |
-| **Combined (unit + UI) — measured after Phase 2** | **26.54%** | **4,107 / 15,476** |
+| Unit tests only (`EcoJournalTests`) | 7.13% | **26.91%** (4,183 / 15,547) |
+| UI tests only (`EcoJournalUITests`) | 21.12% | **50.22%** (7,807 / 15,547) |
+| **Combined (unit + UI, single-pass union)** | **24.36%** | **61.61%** (9,578 / 15,547) |
 
-Unit suite: **93 tests, 0 failing** (plus 32 integration tests excluded from the
-coverage run).
+Tests: roughly 140 → **~270**. Unit suite 248 passing, UI suite 53 passing /
+3 skipped / 0 failing.
 
-Two caveats on the combined figure:
+Note that 26.91 + 50.22 = 77.13%, but the real union is 61.61%. That ~15-point
+gap is code both suites touch. Adding the two percentages is fiction; the only
+honest figure is the union, measured in one pass over one instrumented build —
+which is what `EcoJournalCombinedCoverage.xctestplan` exists for.
 
-- It was measured *after* Phase 2 but *before* the Phase 1 audio seams landed,
-  so it does not include those gains.
-- It rose +338 lines while unit-only rose +177 over the same span. The excess is
-  not from unit tests — it is almost certainly the working-tree fixes to
-  `DashboardView.swift` (a `.contentShape` that makes dashboard cards tappable)
-  and `BaseRobot.swift`, which let the UI tests reach further into the app than
-  they did when the 24.36% baseline was taken.
+Also note `scripts/coverage-report.sh` skips the 32 integration tests, so the
+unit number it prints understates reality by ~5 points (it reports
+`KeychainManager` at 0.5% where the real figure is 79.5%).
 
-The combined number is *not* 7.13% + 21.12% — that would double-count lines both suites happen to touch. 24.36% is the real measured union, run through Xcode's own coverage engine in a single test pass covering both bundles at once.
-
-**The 85%+ figure currently on the blog's EcoJournal project page is stale — real combined coverage is 24.36%.** Leaving as-is until this plan moves the real number closer, then updating the blog to match.
+**The 85%+ figure on the blog's EcoJournal project page is still wrong — real
+combined coverage is 61.61%.**
 
 ### Why unit and UI coverage don't overlap much
 
@@ -188,6 +184,86 @@ the behaviour. The exception is a test whose subject *is* the creation flow.
 not app code; identifiers only let you *find* an element. What moves the number
 is reaching a screen, reaching each conditional state within it, and triggering
 each action closure. Vary the shape of the seeded data to unlock the branches.
+
+### Phase 5 — Components, and the parts of the app we still don't reach
+
+Three tools now exist, and picking the wrong one wastes a lot of time. The rule
+that emerged:
+
+| Code shape | Tool | Why |
+|---|---|---|
+| Leaf component with a state matrix | **ViewInspector** | Exhaustive, milliseconds, no identifiers or robots needed |
+| Screen, navigation, wiring | **XCUITest journey** | The only thing that catches assembly bugs |
+| Business logic | **View model + unit test** | Fastest and most durable |
+| Hardware boundary | **Protocol seam + fake** | Accept the thin adapter sitting at 0% |
+
+The evidence for the first row: `GPSTelemetryCard` went 0% → 80% and
+`WeatherDataCard` 0% → 64% from ViewInspector alone, with no journey. Both are
+pure input-to-render, and a journey only ever samples whichever state the app
+happened to be in — never the error or mid-flight ones.
+
+**Don't test Apple's frameworks.** `MapView` is the clearest case. What is worth
+asserting is *our* logic: which logs qualify for a pin (`logsWithGPS` filters on
+non-nil coordinates), what the annotation shows for a given log shape (it
+branches four ways on weather / photos / audio / nothing), what selecting a pin
+does, and how the region is computed from a set of logs. What is *not* worth
+asserting is that MapKit renders a map — that is Apple's test suite, and driving
+it through XCUITest is slow and brittle. The way to get at ours is to pull the
+pin/selection/region logic into a view model or plain functions and fake the
+MapKit boundary, exactly as `AudioEngine` does for AVFoundation. Note the map
+already proved awkward from the UI side: SwiftUI puts the accessibility
+identifier on a wrapping `Other`, and the real `Map` element is an unidentified
+child.
+
+Remaining targets, cheapest first:
+
+| Target | Lines | Now | Approach |
+|---|---|---|---|
+| `SortOption` | 24 | 0% | Plain unit test — pure enum |
+| `LogDetailView` weather states | — | partial | ViewInspector; 5 states |
+| `JournalSettingsSheet` | 596 | 0% | Journey + ViewInspector |
+| `HeroPhotoSection` | 1,006 | 36% | ViewInspector |
+| `MapView` | 1,407 | 32% | Extract logic, fake MapKit |
+| `MultiAudioMemoView` | 672 | 24% | ViewInspector |
+| `PhotoGalleryView` | 570 | 30% | ViewInspector + fixture media |
+| `AudioMemoView` | 1,178 | 0% | ViewInspector; playback needs fixture media |
+
+Realistic target: **70–75% combined.**
+
+**Two structural decisions still open:**
+
+1. **Fixture media.** Seeded audio memos point at paths that do not exist, and
+   `mediaURLs` are arbitrary strings, so nothing renders or plays. Bundling a
+   real `.jpg` and `.m4a` for UI-test mode unblocks `PhotoGalleryView`,
+   `AudioMemoView` playback, and `HeroPhotoSection` images. It is the only
+   genuinely new infrastructure left.
+2. **Duplicate weather UI.** `LogDetailView` has its own inline `TelemetryCard`
+   grid while `EditLogView` and `NewLogView` share `WeatherDataCard`.
+   Consolidating deletes code *and* collapses a state matrix, which beats
+   testing both.
+
+**Honestly out of reach**, and not worth chasing:
+
+- `CameraPickerRepresentable` — the simulator has no camera, and the app already
+  guards on `isSourceTypeAvailable(.camera)` so the button does not even render.
+- Real capture flows — camera and mic both raise system permission dialogs, and
+  recording picks up whatever ambient audio the host Mac hears. A device makes
+  these *possible* but flaky, and a flaky test is worse than an uncovered line.
+- `AudioEngine` (0%) and `SpeechAuthorization` (23%) — the live adapters, only
+  exercised by the running app. Manual verification is their coverage, by design.
+
+### What testing found that the app was getting wrong
+
+Worth recording, because it is the argument for doing any of this:
+
+- **`HeroPhotoSection` hardcoded the hemisphere** — `"%.4f° N, %.4f° W"` with
+  `abs()`, so an observation in Sydney displayed as `33.8688° N, 151.2093° W`,
+  pointing at the North Atlantic. Coordinates now use one shared signed-decimal
+  formatter.
+- **`LogsListView`'s card chevron** is referenced by a test but no longer exists
+  in the view.
+- **`"Incorrect password"` is unreachable copy** — `PasswordPromptSheet` renders
+  it only when `lockoutMessage` is nil, and `DashboardViewModel` always sets one.
 
 ## Test Harness Notes
 
