@@ -18,15 +18,21 @@ class AudioTranscriptionService: ObservableObject {
     @Published var transcriptionError: String?
 
     private let speechRecognizer: SFSpeechRecognizer?
+    private let authorizer: SpeechAuthorizing
     private var recognitionRequest: SFSpeechURLRecognitionRequest?
     private var recognitionTask: SFSpeechRecognitionTask?
 
-    init() {
+    /// The default authorizer talks to the real Speech framework; tests inject
+    /// a double so the availability/authorization guards can be exercised
+    /// without raising a permission dialog.
+    init(authorizer: SpeechAuthorizing? = nil) {
         // Initialize with user's locale (can be customized to specific language)
-        speechRecognizer = SFSpeechRecognizer(locale: Locale(identifier: "en-US"))
+        let recognizer = SFSpeechRecognizer(locale: Locale(identifier: "en-US"))
+        speechRecognizer = recognizer
+        self.authorizer = authorizer ?? SystemSpeechAuthorizer(recognizer: recognizer)
 
         // Check if speech recognition is available
-        guard speechRecognizer != nil else {
+        guard recognizer != nil else {
             print("❌ Speech recognition not available for this locale")
             return
         }
@@ -37,7 +43,7 @@ class AudioTranscriptionService: ObservableObject {
     // MARK: - Authorization
 
     func requestAuthorization() {
-        SFSpeechRecognizer.requestAuthorization { authStatus in
+        authorizer.requestAuthorization { authStatus in
             Task { @MainActor in
                 switch authStatus {
                 case .authorized:
@@ -62,22 +68,24 @@ class AudioTranscriptionService: ObservableObject {
 
     /// Transcribe audio file to text using on-device speech recognition
     func transcribe(audioURL: URL) async throws -> String {
-        guard let recognizer = speechRecognizer, recognizer.isAvailable else {
+        guard authorizer.isRecognizerAvailable else {
             throw TranscriptionError.recognizerUnavailable
         }
 
         // Request authorization if not already determined (lazy request)
-        let authStatus = SFSpeechRecognizer.authorizationStatus()
-        if authStatus == .notDetermined {
+        if authorizer.authorizationStatus == .notDetermined {
             requestAuthorization()
             // Wait a bit for authorization (this is async but we need to handle it)
             try await Task.sleep(nanoseconds: 500_000_000) // 0.5 seconds
         }
 
         // Check authorization again
-        let currentAuthStatus = SFSpeechRecognizer.authorizationStatus()
-        guard currentAuthStatus == .authorized else {
+        guard authorizer.authorizationStatus == .authorized else {
             throw TranscriptionError.notAuthorized
+        }
+
+        guard let recognizer = speechRecognizer else {
+            throw TranscriptionError.recognizerUnavailable
         }
 
         isTranscribing = true

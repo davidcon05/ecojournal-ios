@@ -18,10 +18,13 @@ class AudioRecorderService: NSObject, ObservableObject {
     @Published var playbackProgress: TimeInterval = 0
     @Published var recordingError: String?
 
-    private var audioRecorder: AVAudioRecorder?
-    private var audioPlayer: AVAudioPlayer?
+    private var audioRecorder: AudioRecording?
+    private var audioPlayer: AudioPlaying?
     private var recordingTimer: Timer?
     private var playbackTimer: Timer?
+
+    private let audioEngine: AudioEngine
+    private let audioSession: AudioSessionControlling
 
     // Directory for storing audio files
     private var audioDirectory: URL {
@@ -36,7 +39,13 @@ class AudioRecorderService: NSObject, ObservableObject {
         return audioPath
     }
 
-    override init() {
+    /// Defaults drive the real AVFoundation stack; tests inject doubles.
+    init(
+        audioEngine: AudioEngine = SystemAudioEngine(),
+        audioSession: AudioSessionControlling = SystemAudioSession()
+    ) {
+        self.audioEngine = audioEngine
+        self.audioSession = audioSession
         super.init()
         // Don't activate audio session until we need it (lazy initialization)
     }
@@ -44,10 +53,9 @@ class AudioRecorderService: NSObject, ObservableObject {
     // MARK: - Audio Session Setup
 
     private func setupAudioSession() {
-        let session = AVAudioSession.sharedInstance()
         do {
             // Configure but don't activate yet
-            try session.setCategory(.playAndRecord, mode: .default, options: [.defaultToSpeaker])
+            try audioSession.configureForPlayAndRecord()
         } catch {
             print("❌ Failed to setup audio session: \(error)")
             recordingError = "Audio session setup failed"
@@ -55,9 +63,8 @@ class AudioRecorderService: NSObject, ObservableObject {
     }
 
     private func activateAudioSession() {
-        let session = AVAudioSession.sharedInstance()
         do {
-            try session.setActive(true)
+            try audioSession.setActive(true)
         } catch {
             print("❌ Failed to activate audio session: \(error)")
             recordingError = "Audio session activation failed"
@@ -65,9 +72,8 @@ class AudioRecorderService: NSObject, ObservableObject {
     }
 
     private func deactivateAudioSession() {
-        let session = AVAudioSession.sharedInstance()
         do {
-            try session.setActive(false, options: .notifyOthersOnDeactivation)
+            try audioSession.setActive(false)
         } catch {
             print("❌ Failed to deactivate audio session: \(error)")
         }
@@ -93,8 +99,8 @@ class AudioRecorderService: NSObject, ObservableObject {
         ]
 
         do {
-            audioRecorder = try AVAudioRecorder(url: fileURL, settings: settings)
-            audioRecorder?.delegate = self
+            audioRecorder = try audioEngine.makeRecorder(url: fileURL, settings: settings)
+            audioRecorder?.assignDelegate(self)
             audioRecorder?.record()
 
             isRecording = true
@@ -157,8 +163,8 @@ class AudioRecorderService: NSObject, ObservableObject {
         stopPlayback()
 
         do {
-            audioPlayer = try AVAudioPlayer(contentsOf: url)
-            audioPlayer?.delegate = self
+            audioPlayer = try audioEngine.makePlayer(contentsOf: url)
+            audioPlayer?.assignDelegate(self)
             audioPlayer?.play()
 
             isPlaying = true
@@ -211,7 +217,7 @@ class AudioRecorderService: NSObject, ObservableObject {
 
     func getDuration(for url: URL) -> TimeInterval? {
         do {
-            let player = try AVAudioPlayer(contentsOf: url)
+            let player = try audioEngine.makePlayer(contentsOf: url)
             return player.duration
         } catch {
             print("❌ Failed to get audio duration: \(error)")
