@@ -30,12 +30,10 @@ DerivedData/
 .build/
 Packages/
 Package.pins
-Package.resolved
+# Package.resolved is intentionally tracked for reproducible app builds (Xcode Cloud requires it)
 
 # CocoaPods (if we use it later)
 Pods/
-*.xcworkspace
-!default.xcworkspace
 
 # Carthage (if we use it later)
 Carthage/Build/
