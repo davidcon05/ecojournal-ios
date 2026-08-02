@@ -330,4 +330,6 @@ paper over.
 
 Unit-only coverage already has a script: `./scripts/coverage-report.sh` (see the Code Coverage section in `TESTING_STRATEGY.md`).
 
-Combined unit+UI coverage doesn't have a permanent command yet — this measurement required a scratch test plan (`EcoJournalCombinedCoverage.xctestplan`) temporarily registered in the shared scheme, then reverted, since `xcodebuild -only-testing:` can't span two independently-configured test plans in one invocation. If we want to track the combined number over time (recommended, given it's the only real number), the next step is making that test plan and scheme registration permanent instead of scratch work, and extending `coverage-report.sh` to run it.
+Combined unit+UI coverage doesn't have a permanent command yet — this measurement required a scratch test plan (`EcoJournalCombinedCoverage.xctestplan`) temporarily registered in the shared scheme, then reverted, since `xcodebuild -only-testing:` can't span two independently-configured test plans in one invocation.
+
+The scheme intentionally keeps `EcoJournal.xctestplan` (unit) and `EcoJournalUITests.xctestplan` (UI) as its only registered plans — Xcode Cloud runs each as its own Test action, and a stray leftover registration of the combined plan previously broke that (CI tried to run `EcoJournalUITests` against the wrong plan). `EcoJournalCombinedCoverage.xctestplan` still exists on disk for re-measuring the real union number by hand: temporarily add it back as a `TestPlanReference` in `EcoJournal.xcscheme`, run it, then remove the reference again.
