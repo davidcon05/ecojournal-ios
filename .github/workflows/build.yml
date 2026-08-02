@@ -52,10 +52,18 @@ jobs:
         run: |
           set -o pipefail
 
+          # Each test target has its own standalone test plan (see EcoJournal.xcscheme)
+          if [ "${{ inputs.test-target }}" = "EcoJournalUITests" ]; then
+            TEST_PLAN="EcoJournalUITests"
+          else
+            TEST_PLAN="EcoJournal"
+          fi
+
           # Build xcodebuild command
           CMD="xcodebuild test \
             -project EcoJournal.xcodeproj \
             -scheme EcoJournal \
+            -testPlan $TEST_PLAN \
             -destination 'platform=iOS Simulator,name=${{ inputs.simulator }}' \
             -only-testing:${{ inputs.test-target }} \
             -resultBundlePath TestResults.xcresult"
